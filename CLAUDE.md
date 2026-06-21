@@ -4,9 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-Partners Architector is a software product for designing, establishing, and developing business partnerships. It is **at the concept stage and intentionally contains no application code yet** — only governance and documentation files (`README.md`, `AGENTS.md`, `LICENSE`, `.editorconfig`, `.gitignore`).
+Partners Architector is a software product for designing, establishing, and developing business partnerships. It is **at the concept stage and intentionally contains no application code yet** — only governance and documentation files (`README.md`, `AGENTS.md`, `HANDOFF.md`, `CLAUDE.md`, `LICENSE`, `.editorconfig`, `.gitignore`).
 
 There is no build, test, lint, or run tooling because there is nothing to build yet. Do not invent or scaffold any.
+
+## Collaboration and handoffs
+
+This repository is worked on by more than one coding agent, asynchronously:
+
+- **You (Claude)** write the primary application code.
+- **Watson**, the deployment agent, extends the code, fixes bugs, and deploys.
+
+Because any session can be interrupted, follow the document-first protocol on every task:
+
+1. Write the plan in `HANDOFF.md` and commit it **before** changing code.
+2. Keep `HANDOFF.md` updated as you go.
+3. Record the outcome and the exact next step in `HANDOFF.md` when you finish or stop.
+
+Read `HANDOFF.md` at the start of every session — it is the source of truth for in-flight work. Commit directly to `main`; do not open pull requests or create feature branches unless the owner asks. Full rules are in `AGENTS.md`.
 
 ## Hard constraints
 
