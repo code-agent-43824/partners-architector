@@ -8,15 +8,21 @@ Any agent's session can stop at any time. This file is the single source of trut
 
 ## Current status
 
-PLANNING COMMITTED — The MVP specification has been adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`). The Phase 0 technical plan is ready at `docs/plans/phase-0-skeleton-and-infrastructure.md`. **No application code written yet** — awaiting the owner's go-ahead to start Phase 0 implementation (Step 0.1).
+PHASE 0 IN PROGRESS — Owner gave the go-ahead to start. Step **0.1 (monorepo & tooling baseline)** is the active work item. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+
+### Owner decisions (2026-06-22)
+- "First stage" = **Phase 0** (skeleton). Confirmed.
+- **Do not rename the repository.** Build in `partners-architector`; product codename stays `psa` as in the spec.
+- **Dev-server constraint:** the current development server is far from the target hardware — **do not attempt to run/deploy any LLM on it.** Phase 0 involves no LLM anyway (AI/ASR are Phases 7–8). The owner will provide a separate server when we reach the LLM phases.
+- Notify the owner when Watson (deploy agent) is needed; not required during Phase 0.
 
 ## Active task
 
-### Phase 0 — Skeleton & infrastructure (planned, not started)
-- Owner: code-writing agent (Claude) — Plan committed: 2026-06-22
+### Phase 0 — Skeleton & infrastructure (in progress)
+- Owner: code-writing agent (Claude) — Plan committed: 2026-06-22; started: 2026-06-22
 - Goal: Establish the monorepo, dev infra (Docker Compose + PostgreSQL/pgvector), Prisma schema + migrations, base auth/RBAC (3 roles), and seed data (30 questions, legal carriers) — a running skeleton later phases build on. Full detail: `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 - Plan (ordered, each step independently committable):
-  - [ ] 0.1 Monorepo & tooling baseline (pnpm workspaces, TS, lint/format, scripts, dir skeleton); document commands in CLAUDE.md/AGENTS.md
+  - [~] 0.1 Monorepo & tooling baseline (pnpm workspaces, TS, lint/format, scripts, dir skeleton); document commands in CLAUDE.md/AGENTS.md — IN PROGRESS
   - [ ] 0.2 Dev infra: Docker Compose (postgres16 + pgvector, api, web), `.env.example`, healthchecks
   - [ ] 0.3 API skeleton (NestJS): config, `/health`, Prisma module, logging/errors
   - [ ] 0.4 Prisma schema + initial migration (core §5 entities; enable pgvector; defer AI/ASR tables)

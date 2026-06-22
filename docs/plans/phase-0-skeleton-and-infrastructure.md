@@ -112,8 +112,8 @@ Each step ends with a green build + its tests + a commit, so an interrupted sess
 ## 7. Risks & open questions
 
 - **Methodology content is draft.** Question texts (App. F), principles (G), matrix rows (H), calculator thresholds (I), questionnaire (J) are drafts pending Dmitry Gritz. They are stored as seed/config so updating them needs no code change. *No blocker for Phase 0.*
-- **Repository name vs codename.** Spec codename is `psa` / `partner-session-assistant`; this repo is `partners-architector`. Plan assumes we build here without renaming — **confirm if a separate repo is wanted.**
-- **Inference/ASR hardware** (8 GB dev profile, final server) is out of Phase 0; only config keys (`inference_base_url`, `llm_model`, …) are reserved in `settings`.
+- **Repository name vs codename.** RESOLVED (owner, 2026-06-22): build in this repo (`partners-architector`) without renaming; product codename stays `psa` as in the spec.
+- **Inference/ASR hardware** (8 GB dev profile, final server) is out of Phase 0; only config keys (`inference_base_url`, `llm_model`, …) are reserved in `settings`. **Dev-server constraint (owner, 2026-06-22):** the current development server is far from target — do **not** run or deploy any LLM on it. A separate server will be provided when Phases 7–8 begin. Phase 0 starts no inference/ASR containers, so this is not a Phase-0 blocker.
 - **Docker Compose vs deployment rules.** `deploy/docker-compose.yml` is product/runtime config, not a deploy pipeline; production deploys stay manual (Watson). Flagged in ADR 0001.
 
 ## 8. What Phase 0 deliberately does NOT do
