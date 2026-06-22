@@ -8,7 +8,7 @@ Any agent's session can stop at any time. This file is the single source of trut
 
 ## Current status
 
-PHASE 0 IN PROGRESS — Steps **0.1 (monorepo & tooling) and 0.2 (Docker Compose dev infra) are complete** and verified (tooling: `install`/`lint`/`format:check`/`typecheck`/`build`/`test` green; infra: `db` service live-tested — Postgres up, pgvector 0.8.3 enabled). Active item: **step 0.3 (API skeleton, NestJS)**. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+PHASE 0 IN PROGRESS — Steps **0.1 (monorepo & tooling) and 0.2 (Docker Compose dev infra) are complete** and verified (tooling: `install`/`lint`/`format:check`/`typecheck`/`build`/`test` green; infra: `db` service live-tested — Postgres up, pgvector 0.8.3 enabled). Active item: **step 0.3 (API skeleton, NestJS) — in progress**. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -24,7 +24,7 @@ PHASE 0 IN PROGRESS — Steps **0.1 (monorepo & tooling) and 0.2 (Docker Compose
 - Plan (ordered, each step independently committable):
   - [x] 0.1 Monorepo & tooling baseline — DONE: pnpm workspaces (`apps/*`, `packages/*`), TS strict (`tsconfig.base.json`), ESLint 9 + Prettier, Vitest, root scripts, dir skeleton, commands documented in CLAUDE.md/README
   - [x] 0.2 Dev infra — DONE: `deploy/docker-compose.yml` (`db` = postgres16 + pgvector, healthcheck, named volume; api/web commented for 0.3/0.7), `deploy/.env.example`, `deploy/db/init` enables pgvector. Live-verified.
-  - [ ] 0.3 API skeleton (NestJS): config, `/health`, Prisma module, logging/errors
+  - [~] 0.3 API skeleton (NestJS): config + env validation (zod), `/health` + `/health/db`, Prisma module (minimal schema), global pipe/filter; + `apps/api/Dockerfile` & compose `api` wiring — IN PROGRESS
   - [ ] 0.4 Prisma schema + initial migration (core §5 entities; enable pgvector; defer AI/ASR tables)
   - [ ] 0.5 Seed: 30 questions (App. A order + App. F texts), carriers (App. B) + default mappings; idempotent; tests
   - [ ] 0.6 Auth & RBAC: email/password (argon2), sessions/JWT, CSRF, rate limit, role guards, data isolation; tests
