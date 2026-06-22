@@ -1,12 +1,11 @@
-// Prisma schema for psa.
+// Prisma schema for psa — initial core domain (spec §5, entities for Phases 0–6).
 //
-// Step 0.3 keeps this minimal: datasource + generator only, which is enough
-// to generate a client and run a connectivity check from /health/db. The
-// domain models (spec §5) and the initial migration are added in step 0.4.
+// AI/ASR tables (audio_recording, transcript_segment, kb_document, kb_chunk,
+// ai_job) are intentionally deferred to Phases 7–8; the `vector` extension is
+// enabled now so those tables can be added without a separate enablement step.
 //
-// Co-located with the api (its sole consumer) for pnpm-friendly client
-// resolution; can be extracted into a shared package later if another
-// service needs database access.
+// Conventions: UUID primary keys; snake_case table/column names (mapped);
+// created_at/updated_at on mutable entities.
 
 generator client {
   provider        = "prisma-client-js"
@@ -17,4 +16,519 @@ datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
   extensions = [vector]
+}
+
+// ===================== Enums =====================
+
+enum Role {
+  admin
+  architect
+  client
+
+  @@map("role")
+}
+
+enum AccountStatus {
+  active
+  blocked
+
+  @@map("account_status")
+}
+
+enum PartnershipTag {
+  new
+  existing
+  with_investor
+  employee_options
+  collaboration
+  other
+
+  @@map("partnership_tag")
+}
+
+enum PartnershipStatus {
+  active
+  archived
+
+  @@map("partnership_status")
+}
+
+enum SessionKind {
+  initial
+  review
+
+  @@map("session_kind")
+}
+
+enum SessionStatus {
+  draft
+  in_progress
+  completed
+
+  @@map("session_status")
+}
+
+enum ClauseStatus {
+  not_started
+  in_progress
+  parked
+  agreed
+  disputed
+  not_applicable
+
+  @@map("clause_status")
+}
+
+enum ClauseSource {
+  manual
+  ai_draft
+  ai_edited
+
+  @@map("clause_source")
+}
+
+enum Carrier {
+  partnership_agreement
+  charter
+  shareholders_agreement
+  employment_contract
+  job_description
+  option_agreement
+  term_sheet
+  investment_memo
+  prenup
+  will
+  local_act
+
+  @@map("carrier")
+}
+
+enum LegalMappingStatus {
+  pending
+  done
+  na
+
+  @@map("legal_mapping_status")
+}
+
+enum FindingType {
+  gap
+  contradiction
+  missing_signoff
+  parked_heavy
+  empty_cell
+  shares_sum
+  calc_incomplete
+  no_review_date
+
+  @@map("finding_type")
+}
+
+enum FindingSeverity {
+  info
+  warning
+  critical
+
+  @@map("finding_severity")
+}
+
+enum FindingStatus {
+  open
+  dismissed
+  resolved
+
+  @@map("finding_status")
+}
+
+enum FindingSource {
+  rule
+  ai
+
+  @@map("finding_source")
+}
+
+enum QuestionnaireInviteStatus {
+  sent
+  opened
+  submitted
+
+  @@map("questionnaire_invite_status")
+}
+
+enum ClientArtifactKind {
+  agreement
+  legalization
+  other
+
+  @@map("client_artifact_kind")
+}
+
+enum ArtifactVisibility {
+  all
+  specific
+
+  @@map("artifact_visibility")
+}
+
+enum ExportKind {
+  agreement
+  legalization
+
+  @@map("export_kind")
+}
+
+enum ExportFormat {
+  pdf
+  docx
+  csv
+
+  @@map("export_format")
+}
+
+// ===================== Core entities =====================
+
+model Account {
+  id           String        @id @default(uuid()) @db.Uuid
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         Role
+  status       AccountStatus @default(active)
+  displayName  String?       @map("display_name")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  ownedPartnerships    Partnership[]         @relation("PartnershipOwner")
+  clientAccess         ClientAccess[]
+  questionnaireInvites QuestionnaireInvite[]
+  publishedArtifacts   ClientArtifact[]      @relation("ArtifactPublisher")
+
+  @@map("account")
+}
+
+model Partnership {
+  id             String            @id @default(uuid()) @db.Uuid
+  ownerAccountId String            @map("owner_account_id") @db.Uuid
+  name           String
+  typeTags       PartnershipTag[]  @default([]) @map("type_tags")
+  status         PartnershipStatus @default(active)
+  notes          String?
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  owner                Account               @relation("PartnershipOwner", fields: [ownerAccountId], references: [id], onDelete: Cascade)
+  partners             Partner[]
+  sessions             Session[]
+  questionnaireInvites QuestionnaireInvite[]
+  clientAccess         ClientAccess[]
+  artifacts            ClientArtifact[]
+
+  @@index([ownerAccountId])
+  @@map("partnership")
+}
+
+model Partner {
+  id            String   @id @default(uuid()) @db.Uuid
+  partnershipId String   @map("partnership_id") @db.Uuid
+  fullName      String   @map("full_name")
+  role          String?
+  contact       String?
+  orderIndex    Int      @map("order_index")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  partnership          Partnership           @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  signoffs             ClauseSignoff[]
+  matrixCells          MatrixCell[]
+  questionnaireInvites QuestionnaireInvite[]
+  clientAccess         ClientAccess[]
+
+  @@index([partnershipId])
+  @@map("partner")
+}
+
+model Session {
+  id                String        @id @default(uuid()) @db.Uuid
+  partnershipId     String        @map("partnership_id") @db.Uuid
+  kind              SessionKind
+  title             String?
+  status            SessionStatus @default(draft)
+  baselineSessionId String?       @map("baseline_session_id") @db.Uuid
+  startedAt         DateTime?     @map("started_at")
+  completedAt       DateTime?     @map("completed_at")
+  nextReviewAt      DateTime?     @map("next_review_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  partnership      Partnership          @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  baseline         Session?             @relation("SessionBaseline", fields: [baselineSessionId], references: [id], onDelete: SetNull)
+  derived          Session[]            @relation("SessionBaseline")
+  clauses          Clause[]
+  shareCalculation ShareCalculation?
+  matrixDecisions  MatrixDecision[]
+  findings         ConsistencyFinding[]
+  exports          ExportRecord[]
+
+  @@index([partnershipId])
+  @@map("session")
+}
+
+model Question {
+  id                 String   @id @default(uuid()) @db.Uuid
+  number             Int
+  title              String
+  prompt             String?
+  helperQuestions    String[] @default([]) @map("helper_questions")
+  category           String
+  isSensitive        Boolean  @default(false) @map("is_sensitive")
+  appliesTo          Json?    @map("applies_to")
+  orderIndex         Int      @map("order_index")
+  questionSetVersion String   @map("question_set_version")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  clauses              Clause[]
+  questionnaireAnswers QuestionnaireAnswer[]
+
+  @@unique([questionSetVersion, number])
+  @@map("question")
+}
+
+model Clause {
+  id             String       @id @default(uuid()) @db.Uuid
+  sessionId      String       @map("session_id") @db.Uuid
+  questionId     String       @map("question_id") @db.Uuid
+  status         ClauseStatus @default(not_started)
+  text           String?
+  rationale      String?
+  naReason       String?      @map("na_reason")
+  source         ClauseSource @default(manual)
+  structuredData Json?        @map("structured_data")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  session       Session         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question      Question        @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  signoffs      ClauseSignoff[]
+  versions      ClauseVersion[]
+  legalMappings LegalMapping[]
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+  @@index([questionId])
+  @@map("clause")
+}
+
+model ClauseSignoff {
+  id        String    @id @default(uuid()) @db.Uuid
+  clauseId  String    @map("clause_id") @db.Uuid
+  partnerId String    @map("partner_id") @db.Uuid
+  agreed    Boolean   @default(false)
+  signedAt  DateTime? @map("signed_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  clause  Clause  @relation(fields: [clauseId], references: [id], onDelete: Cascade)
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([clauseId, partnerId])
+  @@index([clauseId])
+  @@map("clause_signoff")
+}
+
+model ClauseVersion {
+  id        String       @id @default(uuid()) @db.Uuid
+  clauseId  String       @map("clause_id") @db.Uuid
+  text      String?
+  rationale String?
+  status    ClauseStatus
+  note      String?
+  editedAt  DateTime     @default(now()) @map("edited_at")
+
+  clause Clause @relation(fields: [clauseId], references: [id], onDelete: Cascade)
+
+  @@index([clauseId])
+  @@map("clause_version")
+}
+
+model ShareCalculation {
+  id          String   @id @default(uuid()) @db.Uuid
+  sessionId   String   @unique @map("session_id") @db.Uuid
+  weights     Json?
+  economic    Json?
+  human       Json?
+  social      Json?
+  result      Json?
+  isFinalized Boolean  @default(false) @map("is_finalized")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("share_calculation")
+}
+
+model MatrixDecision {
+  id         String   @id @default(uuid()) @db.Uuid
+  sessionId  String   @map("session_id") @db.Uuid
+  label      String
+  orderIndex Int      @map("order_index")
+  isCustom   Boolean  @default(false) @map("is_custom")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  session Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  cells   MatrixCell[]
+
+  @@index([sessionId])
+  @@map("matrix_decision")
+}
+
+model MatrixCell {
+  id               String   @id @default(uuid()) @db.Uuid
+  matrixDecisionId String   @map("matrix_decision_id") @db.Uuid
+  partnerId        String   @map("partner_id") @db.Uuid
+  level            Int? // I–V (1..5) or null; range enforced by a DB check constraint
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  decision MatrixDecision @relation(fields: [matrixDecisionId], references: [id], onDelete: Cascade)
+  partner  Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([matrixDecisionId, partnerId])
+  @@index([matrixDecisionId])
+  @@map("matrix_cell")
+}
+
+model LegalMapping {
+  id        String             @id @default(uuid()) @db.Uuid
+  clauseId  String             @map("clause_id") @db.Uuid
+  carrier   Carrier
+  status    LegalMappingStatus @default(pending)
+  note      String?
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  clause Clause @relation(fields: [clauseId], references: [id], onDelete: Cascade)
+
+  @@unique([clauseId, carrier])
+  @@index([clauseId])
+  @@map("legal_mapping")
+}
+
+model ConsistencyFinding {
+  id          String          @id @default(uuid()) @db.Uuid
+  sessionId   String          @map("session_id") @db.Uuid
+  type        FindingType
+  relatedRefs Json?           @map("related_refs")
+  description String?
+  severity    FindingSeverity @default(warning)
+  status      FindingStatus   @default(open)
+  source      FindingSource
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("consistency_finding")
+}
+
+model QuestionnaireInvite {
+  id            String                    @id @default(uuid()) @db.Uuid
+  partnershipId String                    @map("partnership_id") @db.Uuid
+  partnerId     String                    @map("partner_id") @db.Uuid
+  accountId     String?                   @map("account_id") @db.Uuid
+  token         String                    @unique
+  status        QuestionnaireInviteStatus @default(sent)
+  questionIds   String[]                  @default([]) @map("question_ids")
+  createdAt     DateTime                  @default(now()) @map("created_at")
+  updatedAt     DateTime                  @updatedAt @map("updated_at")
+
+  partnership Partnership           @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  partner     Partner               @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  account     Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  answers     QuestionnaireAnswer[]
+
+  @@index([partnershipId])
+  @@map("questionnaire_invite")
+}
+
+model QuestionnaireAnswer {
+  id          String    @id @default(uuid()) @db.Uuid
+  inviteId    String    @map("invite_id") @db.Uuid
+  questionId  String    @map("question_id") @db.Uuid
+  text        String?
+  submittedAt DateTime? @map("submitted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  invite   QuestionnaireInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  question Question            @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@index([inviteId])
+  @@map("questionnaire_answer")
+}
+
+model ClientAccess {
+  id            String   @id @default(uuid()) @db.Uuid
+  accountId     String   @map("account_id") @db.Uuid
+  partnershipId String   @map("partnership_id") @db.Uuid
+  partnerId     String?  @map("partner_id") @db.Uuid
+  grantedAt     DateTime @default(now()) @map("granted_at")
+
+  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  partnership Partnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  partner     Partner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+
+  @@unique([accountId, partnershipId])
+  @@index([partnershipId])
+  @@map("client_access")
+}
+
+model ClientArtifact {
+  id                String             @id @default(uuid()) @db.Uuid
+  partnershipId     String             @map("partnership_id") @db.Uuid
+  kind              ClientArtifactKind
+  title             String
+  filePath          String             @map("file_path")
+  visibility        ArtifactVisibility @default(all)
+  visiblePartnerIds String[]           @default([]) @map("visible_partner_ids")
+  publishedById     String             @map("published_by") @db.Uuid
+  publishedAt       DateTime           @default(now()) @map("published_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  partnership Partnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  publishedBy Account     @relation("ArtifactPublisher", fields: [publishedById], references: [id], onDelete: Cascade)
+
+  @@index([partnershipId])
+  @@map("client_artifact")
+}
+
+model ExportRecord {
+  id        String       @id @default(uuid()) @db.Uuid
+  sessionId String       @map("session_id") @db.Uuid
+  kind      ExportKind
+  format    ExportFormat
+  filePath  String       @map("file_path")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("export_record")
+}
+
+model Settings {
+  id               String   @id @default(uuid()) @db.Uuid
+  locale           String   @default("ru")
+  aiEnabled        Boolean  @default(false) @map("ai_enabled")
+  inferenceBaseUrl String?  @map("inference_base_url")
+  llmModel         String?  @map("llm_model")
+  asrModel         String?  @map("asr_model")
+  embedModel       String?  @map("embed_model")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
 }

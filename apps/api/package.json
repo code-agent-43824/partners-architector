@@ -9,6 +9,9 @@
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma migrate reset",
     "postinstall": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma generate"
   },
   "dependencies": {
