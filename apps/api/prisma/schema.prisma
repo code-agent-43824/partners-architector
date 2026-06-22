@@ -1,0 +1,20 @@
+// Prisma schema for psa.
+//
+// Step 0.3 keeps this minimal: datasource + generator only, which is enough
+// to generate a client and run a connectivity check from /health/db. The
+// domain models (spec §5) and the initial migration are added in step 0.4.
+//
+// Co-located with the api (its sole consumer) for pnpm-friendly client
+// resolution; can be extracted into a shared package later if another
+// service needs database access.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}

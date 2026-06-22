@@ -27,6 +27,8 @@ Stand up a running, testable skeleton that every later phase builds on: the mono
 
 Stack per ADR 0001 (NestJS, Prisma, pg-boss, React+Vite, PostgreSQL+pgvector). Implementation-level choices for Phase 0: **pnpm workspaces**, **Vitest**, TypeScript strict mode, ESLint + Prettier, `.editorconfig` already present (2-space, LF, UTF-8).
 
+Decided during 0.3: Prisma lives in **`apps/api/prisma/`** (co-located with its only consumer — pnpm-friendly client resolution; can be extracted to a shared package if another service needs DB access). Validation uses **zod** throughout (env now; request DTOs via a zod pipe from 0.6) rather than class-validator, keeping one validation library.
+
 ## 4. Target repository layout (Phase 0 subset of Appendix D)
 
 ```
@@ -34,12 +36,12 @@ Stack per ADR 0001 (NestJS, Prisma, pg-boss, React+Vite, PostgreSQL+pgvector). I
 ├─ apps/
 │  ├─ web/            # React 18 + TS + Vite (SPA shell + login)
 │  └─ api/            # NestJS + TS
+│     ├─ prisma/      # schema.prisma + migrations (co-located with its consumer)
 │     └─ src/
 │        ├─ modules/  # auth (Phase 0); others land in later phases
 │        └─ core/     # pure domain logic (tested) — seed/order helpers in Phase 0
 ├─ packages/
 │  └─ shared/         # DTOs, enums (carrier, roles, statuses, matrix levels)
-├─ prisma/            # schema.prisma, migrations
 ├─ seed/              # questions (A+F), carriers (B), default legal mappings
 ├─ resources/         # cyrillic fonts, templates (placeholders in Phase 0)
 ├─ deploy/            # docker-compose.yml, .env.example, proxy config (later)
