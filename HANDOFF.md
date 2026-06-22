@@ -4,35 +4,46 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-06-21 — by: code-writing agent (Claude)
+**Last updated:** 2026-06-22 — by: code-writing agent (Claude)
 
 ## Current status
 
-IDLE — handoff system established; no task in progress. Awaiting the next assignment.
+PLANNING COMMITTED — The MVP specification has been adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`). The Phase 0 technical plan is ready at `docs/plans/phase-0-skeleton-and-infrastructure.md`. **No application code written yet** — awaiting the owner's go-ahead to start Phase 0 implementation (Step 0.1).
 
 ## Active task
 
-_None in progress._
-
-When you start work, fill this section using the template below and commit it (the plan) before writing any code.
-
-<!-- TEMPLATE — copy into "Active task" when you begin a task
-### <short task title>
-- Owner: <which agent> — Started: <date>
-- Goal: <what "done" looks like, 1-2 sentences>
-- Plan:
-  - [ ] step 1
-  - [ ] step 2
-- Notes / decisions: <links, file paths, assumptions — anything a fresh agent needs>
-- How to resume: <the exact next action if someone picks this up cold>
--->
+### Phase 0 — Skeleton & infrastructure (planned, not started)
+- Owner: code-writing agent (Claude) — Plan committed: 2026-06-22
+- Goal: Establish the monorepo, dev infra (Docker Compose + PostgreSQL/pgvector), Prisma schema + migrations, base auth/RBAC (3 roles), and seed data (30 questions, legal carriers) — a running skeleton later phases build on. Full detail: `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+- Plan (ordered, each step independently committable):
+  - [ ] 0.1 Monorepo & tooling baseline (pnpm workspaces, TS, lint/format, scripts, dir skeleton); document commands in CLAUDE.md/AGENTS.md
+  - [ ] 0.2 Dev infra: Docker Compose (postgres16 + pgvector, api, web), `.env.example`, healthchecks
+  - [ ] 0.3 API skeleton (NestJS): config, `/health`, Prisma module, logging/errors
+  - [ ] 0.4 Prisma schema + initial migration (core §5 entities; enable pgvector; defer AI/ASR tables)
+  - [ ] 0.5 Seed: 30 questions (App. A order + App. F texts), carriers (App. B) + default mappings; idempotent; tests
+  - [ ] 0.6 Auth & RBAC: email/password (argon2), sessions/JWT, CSRF, rate limit, role guards, data isolation; tests
+  - [ ] 0.7 Web skeleton (React + Vite + TS): shell, routing, component base, data layer, login page, ru i18n-ready
+  - [ ] 0.8 Wire-up + Phase 0 DoD: e2e dev run via Docker Compose, smoke test, finalize docs/HANDOFF
+- Notes / decisions: Stack per ADR 0001. Implementation-level choices: pnpm workspaces, Vitest. Build in THIS repo (product codename `psa`; repo `partners-architector`). Deployment stays manual (Watson); no CI/CD or secrets committed.
+- How to resume: start at Step 0.1 in the plan doc. If a step is mid-flight, its commit message plus the checkboxes above show where it stopped.
 
 ## Completed log
 
 Most recent first.
 
+- **2026-06-22 — Adopted the MVP spec and composed the Phase 0 plan.** Added `docs/spec/psa-mvp.md` (the authoritative ТЗ), ADR `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`, and `docs/plans/phase-0-skeleton-and-infrastructure.md`. No application code yet. — code-writing agent (Claude)
 - **2026-06-21 — Established the agent collaboration & handoff system.** Added the "Collaboration and handoff" and "Branching and commits" sections to `AGENTS.md`, created this `HANDOFF.md`, and added a pointer from `CLAUDE.md`. Switched the workflow to direct commits on `main` (no pull requests). — code-writing agent (Claude)
 
 ## Backlog / next up
 
-- _The product is still at the concept stage. No application work is scheduled until the owner records the technology stack and the first requirements (see `AGENTS.md`)._
+Implementation follows the phased critical path in spec §11. Core = Phases 0–6; AI (7) and ASR (8) may be deferred under time pressure.
+
+- **Phase 0** — Skeleton & infrastructure (active plan above).
+- **Phase 1** — Cases, sessions, scenario engine, capture (§4.2–4.4). First minimally useful product.
+- **Phase 2** — Gritz Calculator (§4.5, Appendix E).
+- **Phase 3** — Authority matrix (§4.6).
+- **Phase 4** — Assembly & legalization + export PDF/DOCX/CSV (§4.8, §10).
+- **Phase 5** — Completeness checks + lifecycle/versions/diff (§4.7 FR-7.1, §4.9).
+- **Phase 6** — Client portal (§4.11).
+- **Phase 7** — AI assistant (text): inference, draft/rephrase/AI-checks, RAG, job queue (§4.10, §6).
+- **Phase 8** — ASR (§4.10 FR-10.6).
