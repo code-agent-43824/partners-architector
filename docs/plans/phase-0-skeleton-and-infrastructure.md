@@ -31,6 +31,8 @@ Decided during 0.3: Prisma lives in **`apps/api/prisma/`** (co-located with its 
 
 Decided during 0.5: seed/reference data (the 30 questions, carrier presets) lives in **`apps/api/src/seed`** so feature phases can reuse it at runtime (e.g. instantiating a session's 30 clauses), with an idempotent `db:seed` (tsx) wired to `prisma.seed`.
 
+Decided during 0.6: sessions use a **JWT in an httpOnly cookie** (`psa_session`) with the account re-loaded per request (immediate revocation), **double-submit CSRF** (`psa_csrf` cookie ↔ `x-csrf-token` header), argon2 via **`@node-rs/argon2`** (prebuilt, no native build), and **`@nestjs/throttler`**. `/auth/register` is self-service and always creates an `architect`; admins come from env bootstrap; clients via invite (Phase 6). Auth is kept modular for MFA/FIDO2 later (SEC-2). Note: `deploy/.env` must define `AUTH_JWT_SECRET` even to start only `db`, since compose interpolates the `api` service.
+
 ## 4. Target repository layout (Phase 0 subset of Appendix D)
 
 ```

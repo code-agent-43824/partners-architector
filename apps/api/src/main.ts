@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { AppModule } from './app.module';
@@ -10,8 +11,7 @@ import { AppModule } from './app.module';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
-  // Request-body validation is added with the first DTOs (step 0.6) via a
-  // zod-based pipe, keeping zod as the single validation library (see env.ts).
+  app.use(cookieParser());
   app.useGlobalFilters(new AllExceptionsFilter(app.get(HttpAdapterHost)));
   app.enableShutdownHooks();
 
