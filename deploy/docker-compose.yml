@@ -1,0 +1,64 @@
+# Application/runtime stack for psa (self-hosted, single host).
+#
+# This is product/runtime configuration, NOT a deployment pipeline.
+# Production deploys remain manual and are performed only by Watson — see
+# AGENTS.md. Never commit a real deploy/.env (it is git-ignored).
+#
+# Phase 0 step 0.2 delivers the `db` service (PostgreSQL 16 + pgvector).
+# The `api` and `web` services are scaffolded as commented templates below and
+# activated in steps 0.3 and 0.7 respectively, once their Dockerfiles exist.
+#
+# Usage (dev), from the repository root:
+#   cp deploy/.env.example deploy/.env        # then set a real POSTGRES_PASSWORD
+#   docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d db
+#   docker compose --env-file deploy/.env -f deploy/docker-compose.yml down
+
+name: psa
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-psa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-psa}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-psa} -d ${POSTGRES_DB:-psa}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --- Scaffolded for later steps; each needs its Dockerfile first. ---
+  #
+  # api: # step 0.3 — NestJS API
+  #   build:
+  #     context: ..
+  #     dockerfile: apps/api/Dockerfile
+  #   restart: unless-stopped
+  #   env_file: [.env]
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-psa}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-psa}
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   ports:
+  #     - '${API_PORT:-3000}:3000'
+  #
+  # web: # step 0.7 — React + Vite client (served by nginx in the prod image)
+  #   build:
+  #     context: ..
+  #     dockerfile: apps/web/Dockerfile
+  #   restart: unless-stopped
+  #   depends_on: [api]
+  #   ports:
+  #     - '${WEB_PORT:-8080}:80'
+
+volumes:
+  pgdata:
