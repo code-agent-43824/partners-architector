@@ -12,7 +12,11 @@
     "db:migrate": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:reset": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma migrate reset",
+    "db:seed": "tsx src/seed/seed.run.ts",
     "postinstall": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx src/seed/seed.run.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -27,6 +31,7 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
-    "prisma": "^6.2.0"
+    "prisma": "^6.2.0",
+    "tsx": "^4.19.0"
   }
 }

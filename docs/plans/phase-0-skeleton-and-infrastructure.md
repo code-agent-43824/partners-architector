@@ -29,6 +29,8 @@ Stack per ADR 0001 (NestJS, Prisma, pg-boss, React+Vite, PostgreSQL+pgvector). I
 
 Decided during 0.3: Prisma lives in **`apps/api/prisma/`** (co-located with its only consumer — pnpm-friendly client resolution; can be extracted to a shared package if another service needs DB access). Validation uses **zod** throughout (env now; request DTOs via a zod pipe from 0.6) rather than class-validator, keeping one validation library.
 
+Decided during 0.5: seed/reference data (the 30 questions, carrier presets) lives in **`apps/api/src/seed`** so feature phases can reuse it at runtime (e.g. instantiating a session's 30 clauses), with an idempotent `db:seed` (tsx) wired to `prisma.seed`.
+
 ## 4. Target repository layout (Phase 0 subset of Appendix D)
 
 ```
@@ -39,10 +41,10 @@ Decided during 0.3: Prisma lives in **`apps/api/prisma/`** (co-located with its 
 │     ├─ prisma/      # schema.prisma + migrations (co-located with its consumer)
 │     └─ src/
 │        ├─ modules/  # auth (Phase 0); others land in later phases
-│        └─ core/     # pure domain logic (tested) — seed/order helpers in Phase 0
+│        ├─ seed/     # methodology seed data: questions (A/F), carrier presets (B)
+│        └─ core/     # pure domain logic (tested)
 ├─ packages/
 │  └─ shared/         # DTOs, enums (carrier, roles, statuses, matrix levels)
-├─ seed/              # questions (A+F), carriers (B), default legal mappings
 ├─ resources/         # cyrillic fonts, templates (placeholders in Phase 0)
 ├─ deploy/            # docker-compose.yml, .env.example, proxy config (later)
 ├─ tests/             # integration tests
