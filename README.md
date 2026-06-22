@@ -4,13 +4,13 @@ Software product for designing, establishing, and developing business partnershi
 
 ## Status
 
-The product is in the concept stage. This repository intentionally contains no application code yet.
+Active development. The MVP requirements are specified in [docs/spec/psa-mvp.md](docs/spec/psa-mvp.md); see [HANDOFF.md](HANDOFF.md) for live status. The codebase is a pnpm monorepo currently in Phase 0 (skeleton & infrastructure).
 
 Current public placeholder: <https://partners-architector.duckdns.org/>
 
 ## Development
 
-Before making changes, read [AGENTS.md](AGENTS.md). It defines the working rules for human and coding-agent contributors.
+Before making changes, read [AGENTS.md](AGENTS.md) — it defines the working rules for human and coding-agent contributors — and [HANDOFF.md](HANDOFF.md) for in-flight work. Common commands (Node 22, pnpm 10) live in [CLAUDE.md](CLAUDE.md): `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 
 ## Deployment
 

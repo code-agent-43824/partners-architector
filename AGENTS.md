@@ -4,14 +4,14 @@
 
 Partners Architector is a software product for designing, establishing, and developing business partnerships.
 
-The product is currently in the concept stage. Do not infer product requirements, choose a technology stack, or add application code until those decisions are explicitly recorded in this repository.
+Product requirements are defined in `docs/spec/psa-mvp.md` and the technology stack in `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`. Implementation is underway (Phase 0; see `HANDOFF.md`). Stay within the adopted spec and stack; record any new durable decision in `docs/decisions/` before relying on it.
 
 ## Required workflow
 
 1. Read this file, `README.md`, and `HANDOFF.md` before making changes.
 2. Inspect the current repository state and preserve unrelated work.
 3. Keep each change narrow, documented, and independently reviewable.
-4. Do not add dependencies, frameworks, generated scaffolding, external services, or infrastructure without explicit approval.
+4. Add dependencies, frameworks, or infrastructure only as the adopted spec and the current phase require; anything beyond the adopted stack — or any third-party cloud/external service — needs a decision recorded in `docs/decisions/` first.
 5. Add or update tests when application code is introduced.
 6. Never commit credentials, tokens, private keys, personal data, production configuration, or generated secrets.
 
@@ -37,7 +37,8 @@ Any agent's session can be interrupted at any moment, so every task must stay re
 
 - Use UTF-8 and LF line endings.
 - Prefer clear, boring, maintainable solutions over speculative abstractions.
-- Record durable architectural decisions in `docs/decisions/` when that directory is introduced.
+- Common project commands (Node 22, pnpm 10) are documented in `CLAUDE.md`.
+- Record durable architectural decisions in `docs/decisions/` as ADRs.
 - Keep public documentation free of secrets and private operational details.
 
 ## Deployment
@@ -47,6 +48,7 @@ Any agent's session can be interrupted at any moment, so every task must stay re
 - Do not create CI/CD deployment workflows, deploy keys, server credentials, or automatic release jobs.
 - Only Watson may access or modify the production server; other agents must not.
 - A repository change is not permission to deploy it.
+- The product's `deploy/docker-compose.yml` is application/runtime configuration (in scope). Do not add release automation, deploy keys, or server credentials.
 
 ## Licensing
 

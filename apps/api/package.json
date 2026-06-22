@@ -1,0 +1,6 @@
+{
+  "name": "@psa/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "NestJS API for psa. Scaffolded in Phase 0 step 0.3; placeholder workspace in 0.1."
+}

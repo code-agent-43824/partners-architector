@@ -4,9 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-Partners Architector is a software product for designing, establishing, and developing business partnerships. It is **at the concept stage and intentionally contains no application code yet** — only governance and documentation files (`README.md`, `AGENTS.md`, `HANDOFF.md`, `CLAUDE.md`, `LICENSE`, `.editorconfig`, `.gitignore`).
+Partners Architector (product codename `psa`, "Partner Session Assistant") is a software product for designing, establishing, and developing business partnerships. Its MVP requirements are defined in `docs/spec/psa-mvp.md` — the authoritative specification, adopted in `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`.
 
-There is no build, test, lint, or run tooling because there is nothing to build yet. Do not invent or scaffold any.
+Implementation has started. The repository is a **pnpm monorepo** (`apps/web`, `apps/api`, `packages/shared`) and is currently in **Phase 0 (skeleton & infrastructure)** — see `docs/plans/phase-0-skeleton-and-infrastructure.md` and `HANDOFF.md` for live status.
+
+### Commands
+
+Run from the repository root (Node 22, pnpm 10):
+
+- `pnpm install` — install workspace dependencies.
+- `pnpm lint` / `pnpm lint:fix` — ESLint across the monorepo.
+- `pnpm format` / `pnpm format:check` — Prettier (Markdown is intentionally not formatted).
+- `pnpm typecheck` — TypeScript checks per workspace.
+- `pnpm build` — build all workspaces that define a build.
+- `pnpm test` / `pnpm test:watch` — Vitest.
+
+The Docker Compose dev stack (PostgreSQL/pgvector, api, web) is added in step 0.2; this list grows with each step.
 
 ## Collaboration and handoffs
 
@@ -27,10 +40,10 @@ Read `HANDOFF.md` at the start of every session — it is the source of truth fo
 
 These are the rules that make this repo unusual. Read `AGENTS.md` in full before any change — the points below are the load-bearing ones:
 
-- **Do not add application code, a technology stack, dependencies, frameworks, generated scaffolding, external services, or infrastructure** until those decisions are explicitly recorded in the repository. Absence of a chosen stack is deliberate, not an oversight to fix.
-  - Note: `.gitignore` already lists `node_modules/`, `.next/`, `dist/`, `build/`, `coverage/`. This anticipates a possible JS/Node direction but is **not** approval to adopt it. The stack is still unchosen.
+- **Stay within the adopted spec and stack.** The technology stack is now chosen and recorded in `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`; product scope is defined by `docs/spec/psa-mvp.md`. Add code, dependencies, and infrastructure **only** as the spec and the current phase require. Introducing a different stack, speculative frameworks, or external/third-party services requires a new decision recorded in `docs/decisions/` first.
+  - **Self-hosted AI only.** AI/ASR (Phases 7–8) use the customer's self-hosted, OpenAI-compatible inference endpoint — **no third-party cloud LLMs or aggregators** (spec SEC-4). Do **not** run or deploy an LLM on the development server; a dedicated server is provided when the AI phases begin.
 - **Proprietary despite being public.** `LICENSE` prohibits use, copying, modification, distribution, and deployment without prior written permission from the copyright holder. Public visibility is for review/collaboration only.
-- **Deployment is out of bounds for coding agents.** Production deploys are manual, performed only by Watson, targeting the Oracle server. Do not create CI/CD workflows, deploy keys, server credentials, or release jobs, and do not access or modify the production server. A repository change is never permission to deploy it.
+- **Deployment is out of bounds for coding agents.** Production deploys are manual, performed only by Watson, targeting the Oracle server. Do not create CI/CD workflows, deploy keys, server credentials, or release jobs, and do not access or modify the production server. A repository change is never permission to deploy it. (The product's own `deploy/docker-compose.yml` is application/runtime configuration and is in scope; a release pipeline is not.)
 - **Never commit** credentials, tokens, private keys, personal data, or production configuration.
 
 ## Working style
@@ -38,7 +51,7 @@ These are the rules that make this repo unusual. Read `AGENTS.md` in full before
 - Keep each change narrow, documented, and independently reviewable.
 - Prefer clear, boring, maintainable solutions over speculative abstractions.
 - When application code is eventually introduced, add or update tests alongside it.
-- Record durable architectural decisions in `docs/decisions/` (create the directory when the first decision is made).
+- Record durable architectural decisions in `docs/decisions/` as ADRs (`0001-…` is the first).
 
 ## Formatting
 

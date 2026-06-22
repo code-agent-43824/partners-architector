@@ -8,7 +8,7 @@ Any agent's session can stop at any time. This file is the single source of trut
 
 ## Current status
 
-PHASE 0 IN PROGRESS — Owner gave the go-ahead to start. Step **0.1 (monorepo & tooling baseline)** is the active work item. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+PHASE 0 IN PROGRESS — Step **0.1 (monorepo & tooling baseline) is complete** and verified (`pnpm install` / `lint` / `format:check` / `typecheck` / `build` / `test` all green). Next active item: **step 0.2 (Docker Compose dev infra)**. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -22,7 +22,7 @@ PHASE 0 IN PROGRESS — Owner gave the go-ahead to start. Step **0.1 (monorepo &
 - Owner: code-writing agent (Claude) — Plan committed: 2026-06-22; started: 2026-06-22
 - Goal: Establish the monorepo, dev infra (Docker Compose + PostgreSQL/pgvector), Prisma schema + migrations, base auth/RBAC (3 roles), and seed data (30 questions, legal carriers) — a running skeleton later phases build on. Full detail: `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 - Plan (ordered, each step independently committable):
-  - [~] 0.1 Monorepo & tooling baseline (pnpm workspaces, TS, lint/format, scripts, dir skeleton); document commands in CLAUDE.md/AGENTS.md — IN PROGRESS
+  - [x] 0.1 Monorepo & tooling baseline — DONE: pnpm workspaces (`apps/*`, `packages/*`), TS strict (`tsconfig.base.json`), ESLint 9 + Prettier, Vitest, root scripts, dir skeleton, commands documented in CLAUDE.md/README
   - [ ] 0.2 Dev infra: Docker Compose (postgres16 + pgvector, api, web), `.env.example`, healthchecks
   - [ ] 0.3 API skeleton (NestJS): config, `/health`, Prisma module, logging/errors
   - [ ] 0.4 Prisma schema + initial migration (core §5 entities; enable pgvector; defer AI/ASR tables)
@@ -31,12 +31,13 @@ PHASE 0 IN PROGRESS — Owner gave the go-ahead to start. Step **0.1 (monorepo &
   - [ ] 0.7 Web skeleton (React + Vite + TS): shell, routing, component base, data layer, login page, ru i18n-ready
   - [ ] 0.8 Wire-up + Phase 0 DoD: e2e dev run via Docker Compose, smoke test, finalize docs/HANDOFF
 - Notes / decisions: Stack per ADR 0001. Implementation-level choices: pnpm workspaces, Vitest. Build in THIS repo (product codename `psa`; repo `partners-architector`). Deployment stays manual (Watson); no CI/CD or secrets committed.
-- How to resume: start at Step 0.1 in the plan doc. If a step is mid-flight, its commit message plus the checkboxes above show where it stopped.
+- How to resume: start at Step 0.2 (Docker Compose dev infra) in the plan doc. `pnpm install` then `pnpm test` should be green. If a step is mid-flight, its commit message plus the checkboxes above show where it stopped.
 
 ## Completed log
 
 Most recent first.
 
+- **2026-06-22 — Phase 0, step 0.1 (monorepo & tooling baseline).** Stood up the pnpm monorepo (`apps/web`, `apps/api`, `packages/shared`) with TypeScript (strict), ESLint 9 (flat config) + Prettier, and Vitest. Added root scripts (`build`/`lint`/`typecheck`/`test`/`format`), the Appendix-D directory skeleton (`prisma/`, `seed/`, `resources/`, `deploy/`, `tests/` with purpose READMEs), and the first shared primitive (`USER_ROLES` + guard) with tests. Updated CLAUDE.md/AGENTS.md/README to drop the "concept stage / no tooling" framing. All checks green. — code-writing agent (Claude)
 - **2026-06-22 — Adopted the MVP spec and composed the Phase 0 plan.** Added `docs/spec/psa-mvp.md` (the authoritative ТЗ), ADR `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`, and `docs/plans/phase-0-skeleton-and-infrastructure.md`. No application code yet. — code-writing agent (Claude)
 - **2026-06-21 — Established the agent collaboration & handoff system.** Added the "Collaboration and handoff" and "Branching and commits" sections to `AGENTS.md`, created this `HANDOFF.md`, and added a pointer from `CLAUDE.md`. Switched the workflow to direct commits on `main` (no pull requests). — code-writing agent (Claude)
 
