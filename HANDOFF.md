@@ -8,7 +8,7 @@ Any agent's session can stop at any time. This file is the single source of trut
 
 ## Current status
 
-PHASE 0 IN PROGRESS — Steps **0.1–0.5 are complete** and verified. 0.1 monorepo & tooling; 0.2 `db` service (pgvector); 0.3 NestJS API + health checks; 0.4 Prisma schema (19 core entities, §5) + initial migration; 0.5 seed data — the 30 methodology blocks (Appendix A/F), carrier presets (Appendix B), and a settings singleton, idempotent and exercised by integration tests. Active item: **step 0.6 (auth & RBAC)**. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+PHASE 0 IN PROGRESS — Steps **0.1–0.5 are complete** and verified. 0.1 monorepo & tooling; 0.2 `db` service (pgvector); 0.3 NestJS API + health checks; 0.4 Prisma schema (19 core entities, §5) + initial migration; 0.5 seed data — the 30 methodology blocks (Appendix A/F), carrier presets (Appendix B), and a settings singleton, idempotent and exercised by integration tests. Active item: **step 0.6 (auth & RBAC) — in progress**. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -27,7 +27,7 @@ PHASE 0 IN PROGRESS — Steps **0.1–0.5 are complete** and verified. 0.1 monor
   - [x] 0.3 API skeleton (NestJS) — DONE: ConfigModule + zod env validation, `/health` (200) + `/health/db` (200/503), PrismaModule (minimal schema in `apps/api/prisma`), global exception filter, `apps/api/Dockerfile`, compose `api` wired. Live-verified (Node + container). Request-validation pipe deferred to 0.6 (zod-based).
   - [x] 0.4 Prisma schema + initial migration — DONE: 19 core entities + enums (§5) in `apps/api/prisma/schema.prisma`, migration `20260622120000_init_core_schema` (pgvector extension, matrix-level CHECK); AI/ASR tables deferred to 7/8. Verified on a fresh DB + integration test.
   - [x] 0.5 Seed — DONE: 30 questions (App. A order + App. F texts) + carrier presets (App. B) + settings singleton in `apps/api/src/seed`; idempotent `db:seed` (tsx); pure + integration tests.
-  - [ ] 0.6 Auth & RBAC: email/password (argon2), sessions/JWT, CSRF, rate limit, role guards, data isolation; tests
+  - [~] 0.6 Auth & RBAC: email/password (argon2), JWT cookie, CSRF, rate limit, role guards, data isolation; tests — IN PROGRESS
   - [ ] 0.7 Web skeleton (React + Vite + TS): shell, routing, component base, data layer, login page, ru i18n-ready
   - [ ] 0.8 Wire-up + Phase 0 DoD: e2e dev run via Docker Compose, smoke test, finalize docs/HANDOFF
 - Notes / decisions: Stack per ADR 0001. Implementation-level choices: pnpm workspaces, Vitest. Build in THIS repo (product codename `psa`; repo `partners-architector`). Deployment stays manual (Watson); no CI/CD or secrets committed.
