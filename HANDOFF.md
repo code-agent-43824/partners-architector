@@ -8,7 +8,7 @@ Any agent's session can stop at any time. This file is the single source of trut
 
 ## Current status
 
-PHASE 0 IN PROGRESS — Step **0.1 (monorepo & tooling baseline) is complete** and verified (`pnpm install` / `lint` / `format:check` / `typecheck` / `build` / `test` all green). Next active item: **step 0.2 (Docker Compose dev infra)**. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+PHASE 0 IN PROGRESS — Step **0.1 (monorepo & tooling baseline) is complete** and verified (`pnpm install` / `lint` / `format:check` / `typecheck` / `build` / `test` all green). Active item: **step 0.2 (Docker Compose dev infra) — in progress**. Spec adopted (`docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`); plan at `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -23,7 +23,7 @@ PHASE 0 IN PROGRESS — Step **0.1 (monorepo & tooling baseline) is complete** a
 - Goal: Establish the monorepo, dev infra (Docker Compose + PostgreSQL/pgvector), Prisma schema + migrations, base auth/RBAC (3 roles), and seed data (30 questions, legal carriers) — a running skeleton later phases build on. Full detail: `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 - Plan (ordered, each step independently committable):
   - [x] 0.1 Monorepo & tooling baseline — DONE: pnpm workspaces (`apps/*`, `packages/*`), TS strict (`tsconfig.base.json`), ESLint 9 + Prettier, Vitest, root scripts, dir skeleton, commands documented in CLAUDE.md/README
-  - [ ] 0.2 Dev infra: Docker Compose (postgres16 + pgvector, api, web), `.env.example`, healthchecks
+  - [~] 0.2 Dev infra: Docker Compose (postgres16 + pgvector; api/web scaffolded for 0.3/0.7), `.env.example`, healthchecks — IN PROGRESS
   - [ ] 0.3 API skeleton (NestJS): config, `/health`, Prisma module, logging/errors
   - [ ] 0.4 Prisma schema + initial migration (core §5 entities; enable pgvector; defer AI/ASR tables)
   - [ ] 0.5 Seed: 30 questions (App. A order + App. F texts), carriers (App. B) + default mappings; idempotent; tests
