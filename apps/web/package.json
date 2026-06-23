@@ -2,5 +2,24 @@
   "name": "@psa/web",
   "version": "0.0.0",
   "private": true,
-  "description": "React + Vite web client for psa. Scaffolded in Phase 0 step 0.7; placeholder workspace in 0.1."
+  "type": "module",
+  "description": "React + Vite web client for psa.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview --port 5173",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.0"
+  }
 }

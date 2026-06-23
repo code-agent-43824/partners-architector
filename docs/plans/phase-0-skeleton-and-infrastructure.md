@@ -33,6 +33,8 @@ Decided during 0.5: seed/reference data (the 30 questions, carrier presets) live
 
 Decided during 0.6: sessions use a **JWT in an httpOnly cookie** (`psa_session`) with the account re-loaded per request (immediate revocation), **double-submit CSRF** (`psa_csrf` cookie ↔ `x-csrf-token` header), argon2 via **`@node-rs/argon2`** (prebuilt, no native build), and **`@nestjs/throttler`**. `/auth/register` is self-service and always creates an `architect`; admins come from env bootstrap; clients via invite (Phase 6). Auth is kept modular for MFA/FIDO2 later (SEC-2). Note: `deploy/.env` must define `AUTH_JWT_SECRET` even to start only `db`, since compose interpolates the `api` service.
 
+Decided during 0.7: the SPA calls the API at a same-origin **`/api`** base — Vite dev-proxies `/api`→:3000 and the prod reverse proxy routes it the same way, so cookies/CSRF work **without CORS**. Data layer is **TanStack Query**; routing is **React Router**. i18n is a minimal ru dictionary for now (i18n-ready, NFR-4); the Radix/shadcn design system is deferred to the feature phases. The browser click-through smoke is deferred to 0.8.
+
 ## 4. Target repository layout (Phase 0 subset of Appendix D)
 
 ```
