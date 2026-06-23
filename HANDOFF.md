@@ -4,7 +4,7 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-06-22 — by: code-writing agent (Claude)
+**Last updated:** 2026-06-23 — by: Watson
 
 ## Current status
 
@@ -17,6 +17,19 @@ PHASE 0 COMPLETE — All 8 steps (0.1–0.8) done and verified; the Phase 0 DoD 
 - Notify the owner when Watson (deploy agent) is needed; not required during Phase 0.
 
 ## Active task
+
+### First test deploy to Oracle (IN PROGRESS)
+- Owner: Watson — Plan committed: 2026-06-23; started: 2026-06-23
+- Goal: Manually deploy the completed Phase 0 stack to the Oracle production host behind Caddy at `https://partners-architector.duckdns.org/`, replacing the static placeholder with the Docker Compose web/API/PostgreSQL stack.
+- Plan:
+  - [ ] Pull the current `main` on the Oracle host into the existing deployment checkout or create one if missing.
+  - [ ] Create server-local `deploy/.env` with generated production secrets; keep it untracked.
+  - [ ] Build and start `db`, `api`, and `web` via `deploy/docker-compose.yml`.
+  - [ ] Run the idempotent seed command so the 30 methodology blocks and legal presets exist.
+  - [ ] Repoint Caddy from the placeholder root to the web container and keep HTTPS enabled.
+  - [ ] Verify externally: HTTPS 200 for the SPA, `/api/health` 200, `/api/health/db` 200, and HTTP-to-HTTPS redirect.
+  - [ ] Record the deploy result here and commit it.
+- Notes: Deployment remains manual; no CI/CD, deploy keys, server credentials, or generated secrets are to be committed.
 
 ### Phase 0 — Skeleton & infrastructure (COMPLETE)
 - Owner: code-writing agent (Claude) — Plan committed: 2026-06-22; started: 2026-06-22
