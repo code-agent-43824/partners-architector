@@ -8,7 +8,7 @@ Any agent's session can stop at any time. This file is the single source of trut
 
 ## Current status
 
-PHASE 0 COMPLETE — All 8 steps (0.1–0.8) done and verified; the Phase 0 DoD is met. The full stack (web + api + PostgreSQL/pgvector) runs via Docker Compose and was verified end-to-end through nginx: the SPA is served, `/api` is proxied, the api auto-migrates on start, the seed loads the 30 blocks, and register → login → me → RBAC (403/200) → CSRF-gated logout all work. **Next: the first test deploy (Watson handoff), then Phase 1.** Spec `docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`; plan `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+PHASE 0 DEPLOYED — All 8 Phase 0 steps (0.1–0.8) are done and the first Oracle test deploy is live at `https://partners-architector.duckdns.org/`. The full stack (web + api + PostgreSQL/pgvector) runs on the Oracle host behind Caddy; the api auto-migrated on start, the seed loaded the 30 methodology blocks, and external HTTPS checks for the SPA, `/api/health`, `/api/health/db`, plus HTTP→HTTPS redirect all pass. **Next: Phase 1.** Spec `docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`; plan `docs/plans/phase-0-skeleton-and-infrastructure.md`.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -18,18 +18,20 @@ PHASE 0 COMPLETE — All 8 steps (0.1–0.8) done and verified; the Phase 0 DoD 
 
 ## Active task
 
-### First test deploy to Oracle (IN PROGRESS)
+### First test deploy to Oracle (COMPLETE)
 - Owner: Watson — Plan committed: 2026-06-23; started: 2026-06-23
-- Goal: Manually deploy the completed Phase 0 stack to the Oracle production host behind Caddy at `https://partners-architector.duckdns.org/`, replacing the static placeholder with the Docker Compose web/API/PostgreSQL stack.
+- Goal: Manually deploy the completed Phase 0 stack to the Oracle production host behind Caddy at `https://partners-architector.duckdns.org/`, replacing the static placeholder with the web/API/PostgreSQL runtime stack.
 - Plan:
-  - [ ] Pull the current `main` on the Oracle host into the existing deployment checkout or create one if missing.
-  - [ ] Create server-local `deploy/.env` with generated production secrets; keep it untracked.
-  - [ ] Build and start `db`, `api`, and `web` via `deploy/docker-compose.yml`.
-  - [ ] Run the idempotent seed command so the 30 methodology blocks and legal presets exist.
-  - [ ] Repoint Caddy from the placeholder root to the web container and keep HTTPS enabled.
-  - [ ] Verify externally: HTTPS 200 for the SPA, `/api/health` 200, `/api/health/db` 200, and HTTP-to-HTTPS redirect.
-  - [ ] Record the deploy result here and commit it.
-- Notes: Deployment remains manual; no CI/CD, deploy keys, server credentials, or generated secrets are to be committed.
+  - [x] Pull the current `main` on the Oracle host into the existing deployment checkout or create one if missing.
+  - [x] Create server-local `deploy/.env` with generated production secrets; keep it untracked.
+  - [x] Build and start `db`, `api`, and `web` using the runtime shape defined by `deploy/docker-compose.yml`.
+  - [x] Run the idempotent seed command so the 30 methodology blocks and legal presets exist.
+  - [x] Repoint Caddy from the placeholder root to the web container and keep HTTPS enabled.
+  - [x] Verify externally: HTTPS 200 for the SPA, `/api/health` 200, `/api/health/db` 200, and HTTP-to-HTTPS redirect.
+  - [x] Record the deploy result here and commit it.
+- Result: Live on Oracle (`158.101.210.207`) from commit `3acaec9`. Runtime files are under `/opt/partners-architector/current`; generated secrets are only in server-local `deploy/.env` (mode `600`). Oracle did not have Docker/Compose installed, so the first deploy used an equivalent manual rootful Podman runtime: `psa-db` (PostgreSQL/pgvector, named volume `psa_pgdata`), `psa-api` (localhost `3001`), and `psa-web` (localhost `8080`). Caddy reverse-proxies `partners-architector.duckdns.org` to `127.0.0.1:8080`; `podman-restart.service` is enabled so restart-policy containers are restored after reboot. No CI/CD, deploy keys, server credentials, or generated secrets were committed.
+- Verification: external `https://partners-architector.duckdns.org/` returned `200` from `158.101.210.207` with title `Помощник партнёрских сессий`; `/api/health` returned `200` with `{"status":"ok"}`; `/api/health/db` returned `200` with `{"status":"ok"}`; plain HTTP returned `308` to HTTPS. The seed command reported `Seed complete: 30 questions; settings created.`
+- Next step: Start Phase 1 (cases, sessions, scenario engine, capture) on top of the deployed Phase 0 skeleton.
 
 ### Phase 0 — Skeleton & infrastructure (COMPLETE)
 - Owner: code-writing agent (Claude) — Plan committed: 2026-06-22; started: 2026-06-22
@@ -52,6 +54,7 @@ PHASE 0 COMPLETE — All 8 steps (0.1–0.8) done and verified; the Phase 0 DoD 
 
 Most recent first.
 
+- **2026-06-23 — First Oracle test deploy.** Watson deployed the completed Phase 0 stack to Oracle behind Caddy at `https://partners-architector.duckdns.org/`. Because Oracle had no Docker/Compose, installed Podman from the standard Oracle Linux repository and ran the same runtime shape manually as rootful containers: `psa-db`, `psa-api`, and `psa-web` on a private Podman network, with Caddy reverse-proxying to the web container on `127.0.0.1:8080`. Generated production secrets stayed only in server-local `deploy/.env`; no secrets were committed. API migrations ran on container start; seed loaded 30 questions and settings. Verified externally: SPA `200`, `/api/health` `200`, `/api/health/db` `200`, HTTP `308` to HTTPS, and `podman-restart.service` enabled for reboot recovery. — Watson
 - **2026-06-22 — Phase 0, step 0.8 (wire-up + Phase 0 DoD). Phase 0 complete.** Added the web production image (`apps/web/Dockerfile`, multi-stage: build SPA → nginx serving static + proxying `/api` to the api, with SPA history fallback; `apps/web/nginx.conf`) and activated the `web` service in `deploy/docker-compose.yml`. The api auto-applies migrations on container start (`apps/api/docker-entrypoint.sh`) and `AdminBootstrapService` is now resilient to an unmigrated DB (fixed a boot-crash). Added a root `dev` (parallel api+web watch), the deploy runbook (`deploy/README.md`), and README/CLAUDE getting-started. Verified end-to-end: built the api+web images and ran db+api+web together — SPA served (incl. deep route), `/api/health` + `/api/health/db` 200, register→login→me (architect), admin login + `/accounts` 200, architect `/accounts` 403, CSRF-gated logout, post-logout 401; seed loaded 30 blocks. lint/format/typecheck/build/test green. — code-writing agent (Claude)
 - **2026-06-22 — Phase 0, step 0.7 (web skeleton).** Built the `@psa/web` SPA: React 18 + Vite + TypeScript, React Router (login + protected `/` Partnerships placeholder via `ProtectedRoute`), TanStack Query data layer, a fetch API client (`/api` base, `credentials: 'include'`, double-submit CSRF header on mutations), `useMe`/`useLogin`/`useLogout` hooks, and a ru i18n dictionary (NFR-4). Vite dev proxies `/api`→:3000 so the browser is same-origin (cookies/CSRF without CORS), mirroring the prod reverse proxy. Minimal CSS; the Radix/shadcn design system is deferred to feature phases. Pure unit tests (`readCookie`, i18n). Verified: lint/format/typecheck/build green (Vite build emits `dist/`), and live — Vite serves the SPA and the `/api` proxy reaches the API (`/api/health` 200, `/api/auth/me` 401); browser click-through deferred to 0.8. — code-writing agent (Claude)
 - **2026-06-22 — Phase 0, step 0.6 (auth & RBAC).** Added the `auth` module: self-service architect registration + login/logout/me, argon2 hashing (`@node-rs/argon2`), JWT in an httpOnly `psa_session` cookie (account re-loaded per request so blocked accounts lose access immediately), double-submit CSRF (`psa_csrf` cookie + `x-csrf-token` header) guard, `@nestjs/throttler` rate limiting (5/min on login/register), global `JwtAuthGuard` (+`@Public`), `RolesGuard` (+`@Roles`), a `ZodBody` validation pipe (zod, no class-validator), an `AdminBootstrapService` (creates an admin from `AUTH_ADMIN_EMAIL`/`AUTH_ADMIN_PASSWORD` on first boot), and the `ownership` data-isolation primitive (SEC-5). Added an admin-only `accounts` module (list architects, block/activate — FR-1.5). Env gained `AUTH_*`; compose `api` passes them; `.env.example` updated; vitest configured for decorators. Verified: lint/format/typecheck/build + 33 unit tests green, and a full live e2e (register→login→me→RBAC 403→admin 200→wrong-pass 401→CSRF-gated logout→rate-limit 429). — code-writing agent (Claude)
