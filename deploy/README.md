@@ -13,8 +13,20 @@ release automation, deploy keys, or server credentials here.
   production (spec §7.6).
 - `.env.example` — copy to `deploy/.env` (git-ignored) and fill in.
 - `db/init/` — first-boot SQL (enables the `vector` extension on a fresh volume).
+- `podman/` — the Podman + systemd (Quadlet) deployment target; see [podman/README.md](podman/README.md).
 
-## First test deploy (runbook)
+## Deployment variants (ADR 0002)
+
+Two supported targets share the same images (`apps/api/Dockerfile`,
+`apps/web/Dockerfile`), env contract, and reverse-proxy expectation — keep them
+in sync when the runtime shape changes:
+
+- **Docker Compose** — `docker-compose.yml` (default; also runs under
+  `podman compose`). Runbook below.
+- **Podman + systemd (Quadlet)** — `podman/` (current Oracle target;
+  reboot-safe). Runbook in [podman/README.md](podman/README.md).
+
+## Docker Compose deploy (runbook)
 
 From the repository root, with `COMPOSE="docker compose --env-file deploy/.env -f deploy/docker-compose.yml"`:
 

@@ -4,19 +4,31 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-06-23 — by: Watson
+**Last updated:** 2026-06-23 — by: code-writing agent (Claude)
 
 ## Current status
 
-PHASE 0 DEPLOYED — All 8 Phase 0 steps (0.1–0.8) are done and the first Oracle test deploy is live at `https://partners-architector.duckdns.org/`. The full stack (web + api + PostgreSQL/pgvector) runs on the Oracle host behind Caddy; the api auto-migrated on start, the seed loaded the 30 methodology blocks, and external HTTPS checks for the SPA, `/api/health`, `/api/health/db`, plus HTTP→HTTPS redirect all pass. **Next: Phase 1.** Spec `docs/spec/psa-mvp.md`; ADR `docs/decisions/0001-...`; plan `docs/plans/phase-0-skeleton-and-infrastructure.md`.
+PHASE 0 DEPLOYED; PHASE 1 PLANNED — All 8 Phase 0 steps (0.1–0.8) are done and the first Oracle test deploy is live at `https://partners-architector.duckdns.org/` (Podman behind Caddy; independently re-verified: SPA 200, `/api/health` & `/api/health/db` ok, HTTP→HTTPS 308). Two deployment targets are now recorded (ADR 0002): **Docker Compose** (`deploy/docker-compose.yml`) and **Podman/Quadlet** (`deploy/podman/`) — Oracle runs Podman today. **Phase 1 is planned and ready to start (not yet started):** `docs/plans/phase-1-cases-sessions-scenario-capture.md`. Spec `docs/spec/psa-mvp.md`; ADRs `docs/decisions/0001`, `0002`.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
 - **Do not rename the repository.** Build in `partners-architector`; product codename stays `psa` as in the spec.
 - **Dev-server constraint:** the current development server is far from the target hardware — **do not attempt to run/deploy any LLM on it.** Phase 0 involves no LLM anyway (AI/ASR are Phases 7–8). The owner will provide a separate server when we reach the LLM phases.
 - Notify the owner when Watson (deploy agent) is needed; not required during Phase 0.
+- **Two deploy targets (2026-06-23):** keep both Docker Compose and Podman as supported deploy targets (ADR 0002). Oracle currently uses Podman; a future host may use Docker — keep `deploy/docker-compose.yml` and `deploy/podman/` in sync.
 
 ## Active task
+
+### Phase 1 — Cases, sessions, scenario, capture (planned, not started)
+- Owner: code-writing agent (Claude) — Plan committed: 2026-06-23
+- Goal: first minimally useful product — partnership → partners → session (30 blocks instantiated) → scenario walk → capture agreements → partner sign-offs → version history. Full detail: `docs/plans/phase-1-cases-sessions-scenario-capture.md`.
+- Plan (ordered, each step independently committable):
+  - [ ] 1.1 Partnerships CRUD (create / list+search/filter / get / update / archive / delete; owner-scoped) (FR-2.1–2.2, 2.6)
+  - [ ] 1.2 Partners (2–4; add/remove/reorder) (FR-2.3)
+  - [ ] 1.3 Sessions (initial/review, status lifecycle + completion warnings) (FR-2.4–2.5)
+  - [ ] 1.4 Scenario engine (instantiate 30 blocks → clauses; statuses; «неактуально»; progress) (FR-3.1–3.6)
+  - [ ] 1.5 Capture (text + autosave, rationale, source; partner sign-offs; `clause_version` history + rollback; TipTap editor) (FR-4.1–4.5)
+- How to resume: start at 1.1. Reuse the `@psa/api` feature-module pattern + `ZodBody`, the global guards, and `assertCanAccessOwned` on every partnership-scoped route; web pages via React Router + TanStack Query + the `/api` client. Bring up the dev stack per `deploy/README.md` (or `pnpm --filter @psa/api dev` + `pnpm --filter @psa/web dev` with the db in Docker/Podman).
 
 ### First test deploy to Oracle (COMPLETE)
 - Owner: Watson — Plan committed: 2026-06-23; started: 2026-06-23
@@ -54,6 +66,7 @@ PHASE 0 DEPLOYED — All 8 Phase 0 steps (0.1–0.8) are done and the first Orac
 
 Most recent first.
 
+- **2026-06-23 — Recorded dual deploy targets + prepared Phase 1.** Added ADR `docs/decisions/0002-dual-deploy-targets-docker-and-podman.md` and the Podman/Quadlet target under `deploy/podman/` (`psa.network` + `psa-db`/`psa-api`/`psa-web` `.container` units + README), mirroring `deploy/docker-compose.yml` (same images and env). Updated `deploy/README.md` to document both variants. Wrote the Phase 1 plan (`docs/plans/phase-1-cases-sessions-scenario-capture.md`) and set Phase 1 as the active (not-started) task. No feature code yet. — code-writing agent (Claude)
 - **2026-06-23 — First Oracle test deploy.** Watson deployed the completed Phase 0 stack to Oracle behind Caddy at `https://partners-architector.duckdns.org/`. Because Oracle had no Docker/Compose, installed Podman from the standard Oracle Linux repository and ran the same runtime shape manually as rootful containers: `psa-db`, `psa-api`, and `psa-web` on a private Podman network, with Caddy reverse-proxying to the web container on `127.0.0.1:8080`. Generated production secrets stayed only in server-local `deploy/.env`; no secrets were committed. API migrations ran on container start; seed loaded 30 questions and settings. Verified externally: SPA `200`, `/api/health` `200`, `/api/health/db` `200`, HTTP `308` to HTTPS, and `podman-restart.service` enabled for reboot recovery. — Watson
 - **2026-06-22 — Phase 0, step 0.8 (wire-up + Phase 0 DoD). Phase 0 complete.** Added the web production image (`apps/web/Dockerfile`, multi-stage: build SPA → nginx serving static + proxying `/api` to the api, with SPA history fallback; `apps/web/nginx.conf`) and activated the `web` service in `deploy/docker-compose.yml`. The api auto-applies migrations on container start (`apps/api/docker-entrypoint.sh`) and `AdminBootstrapService` is now resilient to an unmigrated DB (fixed a boot-crash). Added a root `dev` (parallel api+web watch), the deploy runbook (`deploy/README.md`), and README/CLAUDE getting-started. Verified end-to-end: built the api+web images and ran db+api+web together — SPA served (incl. deep route), `/api/health` + `/api/health/db` 200, register→login→me (architect), admin login + `/accounts` 200, architect `/accounts` 403, CSRF-gated logout, post-logout 401; seed loaded 30 blocks. lint/format/typecheck/build/test green. — code-writing agent (Claude)
 - **2026-06-22 — Phase 0, step 0.7 (web skeleton).** Built the `@psa/web` SPA: React 18 + Vite + TypeScript, React Router (login + protected `/` Partnerships placeholder via `ProtectedRoute`), TanStack Query data layer, a fetch API client (`/api` base, `credentials: 'include'`, double-submit CSRF header on mutations), `useMe`/`useLogin`/`useLogout` hooks, and a ru i18n dictionary (NFR-4). Vite dev proxies `/api`→:3000 so the browser is same-origin (cookies/CSRF without CORS), mirroring the prod reverse proxy. Minimal CSS; the Radix/shadcn design system is deferred to feature phases. Pure unit tests (`readCookie`, i18n). Verified: lint/format/typecheck/build green (Vite build emits `dist/`), and live — Vite serves the SPA and the `/api` proxy reaches the API (`/api/health` 200, `/api/auth/me` 401); browser click-through deferred to 0.8. — code-writing agent (Claude)

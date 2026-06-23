@@ -1,0 +1,19 @@
+[Unit]
+Description=psa web (SPA served by nginx, proxies /api to the api)
+Requires=psa-api.service
+After=psa-api.service
+
+[Container]
+ContainerName=psa-web
+# Built locally from apps/web/Dockerfile (see deploy/podman/README.md).
+Image=localhost/psa-web:latest
+Network=psa.network
+NetworkAlias=web
+# Published on loopback only; a host reverse proxy (Caddy) terminates TLS.
+PublishPort=127.0.0.1:8080:80
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

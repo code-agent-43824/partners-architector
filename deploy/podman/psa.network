@@ -1,0 +1,5 @@
+[Unit]
+Description=psa container network
+
+[Network]
+NetworkName=psa

@@ -1,0 +1,21 @@
+[Unit]
+Description=psa database (PostgreSQL 16 + pgvector)
+Requires=psa-network.service
+After=psa-network.service
+
+[Container]
+ContainerName=psa-db
+Image=docker.io/pgvector/pgvector:pg16
+Network=psa.network
+NetworkAlias=db
+EnvironmentFile=/etc/partners-architector/psa.env
+Volume=psa_pgdata:/var/lib/postgresql/data
+HealthCmd=pg_isready -U psa -d psa
+HealthStartPeriod=10s
+HealthInterval=10s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

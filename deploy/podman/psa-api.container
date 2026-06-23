@@ -1,0 +1,23 @@
+[Unit]
+Description=psa API (NestJS)
+Requires=psa-db.service
+After=psa-db.service
+
+[Container]
+ContainerName=psa-api
+# Built locally from apps/api/Dockerfile (see deploy/podman/README.md).
+Image=localhost/psa-api:latest
+Network=psa.network
+NetworkAlias=api
+EnvironmentFile=/etc/partners-architector/psa.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+[Service]
+# The entrypoint runs `prisma migrate deploy` before starting; if the database
+# is not ready yet on first boot, systemd retries.
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
