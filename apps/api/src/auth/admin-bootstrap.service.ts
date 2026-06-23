@@ -27,23 +27,30 @@ export class AdminBootstrapService implements OnApplicationBootstrap {
       return;
     }
 
-    const existingAdmin = await this.prisma.account.findFirst({ where: { role: Role.admin } });
-    if (existingAdmin) {
-      return;
-    }
-    if (await this.prisma.account.findUnique({ where: { email } })) {
-      return;
-    }
+    try {
+      const existingAdmin = await this.prisma.account.findFirst({ where: { role: Role.admin } });
+      if (existingAdmin) {
+        return;
+      }
+      if (await this.prisma.account.findUnique({ where: { email } })) {
+        return;
+      }
 
-    await this.prisma.account.create({
-      data: {
-        email,
-        passwordHash: await this.passwords.hash(password),
-        role: Role.admin,
-        status: AccountStatus.active,
-        displayName: 'Administrator',
-      },
-    });
-    this.logger.log(`Bootstrapped initial admin account: ${email}`);
+      await this.prisma.account.create({
+        data: {
+          email,
+          passwordHash: await this.passwords.hash(password),
+          role: Role.admin,
+          status: AccountStatus.active,
+          displayName: 'Administrator',
+        },
+      });
+      this.logger.log(`Bootstrapped initial admin account: ${email}`);
+    } catch (error) {
+      // Never let bootstrap crash the app (e.g. migrations not yet applied).
+      this.logger.warn(
+        `Admin bootstrap skipped: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }

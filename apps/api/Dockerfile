@@ -32,4 +32,5 @@ ENV NODE_ENV=production
 WORKDIR /repo/apps/api
 EXPOSE 3000
 
-CMD ["node", "dist/main.js"]
+# Entrypoint applies migrations (idempotent) before starting the API.
+CMD ["sh", "/repo/apps/api/docker-entrypoint.sh"]

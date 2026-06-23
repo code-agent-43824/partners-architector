@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Partners Architector (product codename `psa`, "Partner Session Assistant") is a software product for designing, establishing, and developing business partnerships. Its MVP requirements are defined in `docs/spec/psa-mvp.md` — the authoritative specification, adopted in `docs/decisions/0001-adopt-psa-mvp-spec-and-stack.md`.
 
-Implementation has started. The repository is a **pnpm monorepo** (`apps/web`, `apps/api`, `packages/shared`) and is currently in **Phase 0 (skeleton & infrastructure)** — see `docs/plans/phase-0-skeleton-and-infrastructure.md` and `HANDOFF.md` for live status.
+Implementation has started. The repository is a **pnpm monorepo** (`apps/web`, `apps/api`, `packages/shared`). **Phase 0 (skeleton & infrastructure) is complete** — the full stack (web + API + PostgreSQL/pgvector) runs via Docker Compose; next is Phase 1 (cases, sessions, scenario). See `docs/plans/phase-0-skeleton-and-infrastructure.md` and `HANDOFF.md` for live status.
 
 ### Commands
 
@@ -19,7 +19,7 @@ Run from the repository root (Node 22, pnpm 10):
 - `pnpm build` — build all workspaces that define a build.
 - `pnpm test` / `pnpm test:watch` — Vitest.
 
-The Docker Compose dev stack (PostgreSQL/pgvector, api, web) is added in step 0.2; this list grows with each step.
+Run the full stack with Docker Compose (PostgreSQL/pgvector + api + web): `cp deploy/.env.example deploy/.env` (set `POSTGRES_PASSWORD`, `AUTH_JWT_SECRET`), then `docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d --build` and `… exec api pnpm --filter @psa/api db:seed`. The runbook is in `deploy/README.md`. For front-end dev, `pnpm --filter @psa/web dev` (Vite proxies `/api`→:3000).
 
 ## Collaboration and handoffs
 

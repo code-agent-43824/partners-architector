@@ -4,14 +4,17 @@
 # Production deploys remain manual and are performed only by Watson — see
 # AGENTS.md. Never commit a real deploy/.env (it is git-ignored).
 #
-# Phase 0 step 0.2 delivers the `db` service (PostgreSQL 16 + pgvector).
-# The `api` and `web` services are scaffolded as commented templates below and
-# activated in steps 0.3 and 0.7 respectively, once their Dockerfiles exist.
+# Services: `db` (PostgreSQL 16 + pgvector), `api` (NestJS), `web` (SPA via
+# nginx, which proxies /api to the api). A TLS reverse proxy (Caddy/nginx) is
+# added for production (spec §7.6); over plain HTTP set AUTH_COOKIE_SECURE=false.
 #
-# Usage (dev), from the repository root:
-#   cp deploy/.env.example deploy/.env        # then set a real POSTGRES_PASSWORD
-#   docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d db
-#   docker compose --env-file deploy/.env -f deploy/docker-compose.yml down
+# Usage, from the repository root (COMPOSE = docker compose --env-file deploy/.env
+# -f deploy/docker-compose.yml):
+#   cp deploy/.env.example deploy/.env     # set POSTGRES_PASSWORD and AUTH_JWT_SECRET
+#   $COMPOSE up -d --build                 # build + start db, api (auto-migrates), web
+#   $COMPOSE exec api pnpm --filter @psa/api db:seed     # load the 30 blocks (once)
+#   # open http://localhost:${WEB_PORT:-8080}
+#   $COMPOSE down                          # (add -v to drop the database volume)
 
 name: psa
 
@@ -65,14 +68,16 @@ services:
       retries: 5
       start_period: 20s
 
-  # web: # step 0.7 — React + Vite client (served by nginx); needs apps/web/Dockerfile
-  #   build:
-  #     context: ..
-  #     dockerfile: apps/web/Dockerfile
-  #   restart: unless-stopped
-  #   depends_on: [api]
-  #   ports:
-  #     - '${WEB_PORT:-8080}:80'
+  web: # SPA served by nginx; proxies /api to the api service
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${WEB_PORT:-8080}:80'
 
 volumes:
   pgdata:
