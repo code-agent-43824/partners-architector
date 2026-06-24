@@ -23,7 +23,7 @@ PHASE 0 DEPLOYED; PHASE 1 PLANNED — All 8 Phase 0 steps (0.1–0.8) are done a
 - Owner: code-writing agent (Claude) — Plan committed: 2026-06-23
 - Goal: first minimally useful product — partnership → partners → session (30 blocks instantiated) → scenario walk → capture agreements → partner sign-offs → version history. Full detail: `docs/plans/phase-1-cases-sessions-scenario-capture.md`.
 - Plan (ordered, each step independently committable):
-  - [ ] 1.1 Partnerships CRUD (create / list+search/filter / get / update / archive / delete; owner-scoped) (FR-2.1–2.2, 2.6)
+  - [~] 1.1 Partnerships CRUD (create / list+search/filter / get / update / archive / delete; owner-scoped) (FR-2.1–2.2, 2.6) — IN PROGRESS
   - [ ] 1.2 Partners (2–4; add/remove/reorder) (FR-2.3)
   - [ ] 1.3 Sessions (initial/review, status lifecycle + completion warnings) (FR-2.4–2.5)
   - [ ] 1.4 Scenario engine (instantiate 30 blocks → clauses; statuses; «неактуально»; progress) (FR-3.1–3.6)
