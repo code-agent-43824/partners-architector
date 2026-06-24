@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { PartnersSection } from '../components/PartnersSection';
+import { SessionsSection } from '../components/SessionsSection';
 import { t } from '../i18n';
 import {
   useArchivePartnership,
@@ -80,6 +81,8 @@ export function PartnershipDetailPage() {
       </form>
 
       <PartnersSection partnershipId={id} />
+
+      <SessionsSection partnershipId={id} />
 
       <div className="toolbar">
         {partnership.status === 'active' ? (
