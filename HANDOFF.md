@@ -8,7 +8,7 @@ Any agent's session can stop at any time. This file is the single source of trut
 
 ## Current status
 
-PHASE 1 IN PROGRESS — Step **1.1 (partnerships CRUD, API + web) is done**, verified end-to-end, and **live on Oracle** from commit `389a934` (Podman/Caddy, `https://partners-architector.duckdns.org/`). The deploy rebuilt/replaced only API + web; the database, volume, schema, and seed were untouched. Two deploy targets recorded (ADR 0002): Docker Compose + Podman/Quadlet. Next dev step is **1.2 (partners)**. Spec `docs/spec/psa-mvp.md`; plan `docs/plans/phase-1-cases-sessions-scenario-capture.md`; ADRs 0001, 0002.
+PHASE 1 IN PROGRESS — Step **1.1 (partnerships CRUD, API + web) is done, deployed, and live** on the Oracle host (Podman/Caddy, `https://partners-architector.duckdns.org/`); verified externally on 2026-06-24. **Step 1.2 (partners) is now IN PROGRESS** (owner bounds: **max 5** partners, hard cap; the **min 2 is not forced** during editing — checked later at session start, step 1.3). Two deploy targets recorded (ADR 0002): Docker Compose + Podman/Quadlet. Spec `docs/spec/psa-mvp.md`; plan `docs/plans/phase-1-cases-sessions-scenario-capture.md`; ADRs 0001, 0002.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -16,6 +16,7 @@ PHASE 1 IN PROGRESS — Step **1.1 (partnerships CRUD, API + web) is done**, ver
 - **Dev-server constraint:** the current development server is far from the target hardware — **do not attempt to run/deploy any LLM on it.** Phase 0 involves no LLM anyway (AI/ASR are Phases 7–8). The owner will provide a separate server when we reach the LLM phases.
 - Notify the owner when Watson (deploy agent) is needed; not required during Phase 0.
 - **Two deploy targets (2026-06-23):** keep both Docker Compose and Podman as supported deploy targets (ADR 0002). Oracle currently uses Podman; a future host may use Docker — keep `deploy/docker-compose.yml` and `deploy/podman/` in sync.
+- **Partner count bounds (2026-06-24):** a partnership may have **up to 5 partners** — a hard cap enforced when adding. The **minimum of 2 is not enforced** while editing partners (a partnership may temporarily have 0–1); it is validated later, when a session is started (step 1.3). This widens the spec's FR-2.3 upper bound ("2–4") to 5 per the owner's instruction.
 
 ## Active task
 
@@ -24,7 +25,7 @@ PHASE 1 IN PROGRESS — Step **1.1 (partnerships CRUD, API + web) is done**, ver
 - Goal: first minimally useful product — partnership → partners → session (30 blocks instantiated) → scenario walk → capture agreements → partner sign-offs → version history. Full detail: `docs/plans/phase-1-cases-sessions-scenario-capture.md`.
 - Plan (ordered, each step independently committable):
   - [x] 1.1 Partnerships CRUD — DONE: `partnerships` API module (create/list+search/filter/get/update/archive/restore/delete; owner isolation via `assertCanAccessOwned`, architect+admin roles); web list + create + detail pages behind an `AppLayout`; unit tests (service isolation + DTOs) + full-stack smoke (CRUD, cross-architect 403, CSRF). No new migration.
-  - [ ] 1.2 Partners (2–4; add/remove/reorder) (FR-2.3)
+  - [ ] 1.2 Partners (add/remove/reorder; **max 5** hard cap, min 2 checked at session start — owner override of FR-2.3 "2–4") (FR-2.3) — IN PROGRESS
   - [ ] 1.3 Sessions (initial/review, status lifecycle + completion warnings) (FR-2.4–2.5)
   - [ ] 1.4 Scenario engine (instantiate 30 blocks → clauses; statuses; «неактуально»; progress) (FR-3.1–3.6)
   - [ ] 1.5 Capture (text + autosave, rationale, source; partner sign-offs; `clause_version` history + rollback; TipTap editor) (FR-4.1–4.5)
