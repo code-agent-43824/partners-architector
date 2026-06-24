@@ -4,11 +4,11 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-06-23 — by: code-writing agent (Claude)
+**Last updated:** 2026-06-24 — by: code-writing agent (Claude)
 
 ## Current status
 
-PHASE 1 IN PROGRESS — Step **1.1 (partnerships CRUD, API + web) is done** and verified end-to-end (full-stack smoke through nginx: create/list/get/update/archive/restore/delete, cross-architect 403 isolation, CSRF-gated mutations). **Ready for an intermediate deploy** — no new migration (uses the existing `partnership` table from 0.4); deploy = rebuild the api+web images and restart. Phase 0 remains live on Oracle (Podman/Caddy, `https://partners-architector.duckdns.org/`). Two deploy targets recorded (ADR 0002): Docker Compose + Podman/Quadlet. Spec `docs/spec/psa-mvp.md`; plan `docs/plans/phase-1-cases-sessions-scenario-capture.md`; ADRs 0001, 0002.
+PHASE 1 IN PROGRESS — Step **1.1 (partnerships CRUD, API + web) is done** and verified end-to-end (full-stack smoke through nginx: create/list/get/update/archive/restore/delete, cross-architect 403 isolation, CSRF-gated mutations). **Intermediate deploy of 1.1 handed off to Watson** (commit `389a934` on `main`; application code only — no migration, no re-seed, no new deps/env — see "Intermediate deploy — Phase 1.1" under Active task). Phase 0 is live on the Oracle host (Podman/Caddy, `https://partners-architector.duckdns.org/`); 1.1 deploys onto it. Two deploy targets recorded (ADR 0002): Docker Compose + Podman/Quadlet. Next dev step is **1.2 (partners)**. Spec `docs/spec/psa-mvp.md`; plan `docs/plans/phase-1-cases-sessions-scenario-capture.md`; ADRs 0001, 0002.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -29,6 +29,28 @@ PHASE 1 IN PROGRESS — Step **1.1 (partnerships CRUD, API + web) is done** and 
   - [ ] 1.4 Scenario engine (instantiate 30 blocks → clauses; statuses; «неактуально»; progress) (FR-3.1–3.6)
   - [ ] 1.5 Capture (text + autosave, rationale, source; partner sign-offs; `clause_version` history + rollback; TipTap editor) (FR-4.1–4.5)
 - How to resume: start at 1.2 (partners: 2–4 per partnership, add/remove/reorder — FR-2.3) on the partnership detail page; then 1.3 sessions. Reuse the `@psa/api` feature-module pattern + `ZodBody`, the global guards, and `assertCanAccessOwned` (partners are scoped through their partnership's owner); web via React Router + TanStack Query + the `/api` client. Bring up the dev stack per `deploy/README.md` (or `pnpm --filter @psa/api dev` + `pnpm --filter @psa/web dev` with the db in Docker/Podman).
+
+### Intermediate deploy — Phase 1.1 (partnerships) to Oracle (handed to Watson)
+- Owner: Watson — Handoff committed: 2026-06-24
+- Goal: Roll the Phase 1.1 partnerships feature onto the live Oracle host (`https://partners-architector.duckdns.org/`) on top of the running Phase 0 stack.
+- Source: commit `389a934` on `main`. Change surface (verified by `git show --stat`): **application code only** — a new `apps/api/src/partnerships/` API module (registered in `app.module.ts`) and the web list/detail pages (`apps/web/src/…`). What this means for the deploy:
+  - **No Prisma schema change and no new migration** — reuses the `partnership` table from step 0.4. The api auto-runs `migrate deploy` on start; here it is a no-op.
+  - **No new dependencies** — `package.json` and `pnpm-lock.yaml` are unchanged.
+  - **No new env vars / no config change** — same `psa.env` contract as the first deploy.
+  - **No re-seed** — methodology blocks / settings are unchanged.
+- Plan:
+  - [ ] Pull `main` (`389a934`) into the deployment checkout (`/opt/partners-architector/current`).
+  - [ ] Rebuild both images (build context = repo root):
+    `podman build -f apps/api/Dockerfile -t localhost/psa-api:latest .` and `podman build -f apps/web/Dockerfile -t localhost/psa-web:latest .`
+  - [ ] Recreate the api + web containers from the new images (`psa-db` is untouched):
+    - current live form (manual rootful containers + `podman-restart.service`): `podman stop psa-api psa-web && podman rm psa-api psa-web`, then re-run both with the **same flags as the first deploy** (same `psa` network, `--env-file` pointing at the server-local `psa.env`, web published on `127.0.0.1:8080`);
+    - or, if migrated to Quadlet: `systemctl restart psa-api psa-web`.
+  - [ ] **Do not** run `db:seed` or any migration — neither changed.
+  - [ ] Verify externally (below), then record the result here and commit.
+- Verify:
+  - Regression (stack healthy after rebuild): `https://partners-architector.duckdns.org/` → 200 (SPA), `/api/health` and `/api/health/db` → `{"status":"ok"}`, HTTP → 308.
+  - Feature is live (non-destructive): `GET /api/partnerships` **unauthenticated → 401** (the route now exists and is guarded; it was 404 before 1.1). Optionally, log in as an architect and confirm the partnerships list loads and "create" works in the UI.
+- Notes: keep the Podman target (`deploy/podman/`) and `deploy/docker-compose.yml` as the reference runtime shape (ADR 0002). No CI/CD, deploy keys, server credentials, or secrets are committed — secrets stay only in the server-local `psa.env` (mode `600`).
 
 ### First test deploy to Oracle (COMPLETE)
 - Owner: Watson — Plan committed: 2026-06-23; started: 2026-06-23
