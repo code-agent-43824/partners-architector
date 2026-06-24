@@ -29,6 +29,21 @@ export const ru = {
   'partnerships.back': '← К списку',
   'partnerships.save': 'Сохранить',
   'detail.notFound': 'Партнёрство не найдено.',
+  'partners.title': 'Партнёры',
+  'partners.empty': 'Партнёры ещё не добавлены.',
+  'partners.add': 'Добавить партнёра',
+  'partners.fullName': 'Имя',
+  'partners.role': 'Роль',
+  'partners.contact': 'Контакт',
+  'partners.edit': 'Изменить',
+  'partners.save': 'Сохранить',
+  'partners.cancel': 'Отмена',
+  'partners.remove': 'Удалить',
+  'partners.removeConfirm': 'Удалить партнёра?',
+  'partners.moveUp': 'Выше',
+  'partners.moveDown': 'Ниже',
+  'partners.maxReached': 'Достигнут максимум — 5 партнёров.',
+  'partners.minHint': 'Для запуска сессии понадобится минимум 2 партнёра.',
 } as const;
 
 export type TranslationKey = keyof typeof ru;
