@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { ProtectedRoute } from './auth/ProtectedRoute';
+import { AppLayout } from './components/AppLayout';
 import { LoginPage } from './pages/LoginPage';
+import { PartnershipDetailPage } from './pages/PartnershipDetailPage';
 import { PartnershipsPage } from './pages/PartnershipsPage';
 
 export function App() {
@@ -9,13 +11,15 @@ export function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
-        path="/"
         element={
           <ProtectedRoute>
-            <PartnershipsPage />
+            <AppLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/" element={<PartnershipsPage />} />
+        <Route path="/partnerships/:id" element={<PartnershipDetailPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
