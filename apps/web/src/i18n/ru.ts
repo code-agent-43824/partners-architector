@@ -63,6 +63,23 @@ export const ru = {
   'sessions.deleteConfirm': 'Удалить сессию? Действие необратимо.',
   'sessions.create': 'Создать',
   'sessions.needPartners': 'Чтобы начать сессию, добавьте минимум 2 партнёра.',
+  'scenario.title': 'Сценарий сессии',
+  'scenario.back': '← К партнёрству',
+  'scenario.agreedOf': 'Согласовано',
+  'scenario.heavyOpen': 'Тяжёлых не закрыто',
+  'scenario.disputedParked': 'Спор/отложен',
+  'scenario.heavyBadge': 'тяжёлый',
+  'scenario.statusLabel': 'Статус',
+  'scenario.status.not_started': 'не начат',
+  'scenario.status.in_progress': 'в работе',
+  'scenario.status.parked': 'отложен',
+  'scenario.status.agreed': 'согласовано',
+  'scenario.status.disputed': 'спор',
+  'scenario.status.not_applicable': 'неактуально',
+  'scenario.naReasonLabel': 'Причина',
+  'scenario.naReasonPrompt': 'Укажите причину, почему блок неактуален:',
+  'scenario.naWarning':
+    'Методика предупреждает: пометка «неактуально» — частый способ уйти от трудного разговора. Отмечайте блок неактуальным только осознанно. Дальше потребуется указать причину.',
 } as const;
 
 export type TranslationKey = keyof typeof ru;

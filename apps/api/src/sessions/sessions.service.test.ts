@@ -19,9 +19,11 @@ const PID = 'p-1';
 const SID = 's-1';
 
 function makePrisma() {
-  return {
+  const prisma = {
     partnership: { findUnique: vi.fn() },
     partner: { count: vi.fn() },
+    question: { findMany: vi.fn() },
+    clause: { createMany: vi.fn() },
     session: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -29,7 +31,11 @@ function makePrisma() {
       update: vi.fn(),
       delete: vi.fn(),
     },
+    $transaction: vi.fn(),
   };
+  // Run the transactional callback against the same fake client.
+  prisma.$transaction.mockImplementation((cb: (tx: typeof prisma) => unknown) => cb(prisma));
+  return prisma;
 }
 
 describe('SessionsService', () => {
@@ -58,19 +64,29 @@ describe('SessionsService', () => {
     await expect(service.list(admin, PID)).resolves.toEqual([]);
   });
 
-  it('creates an initial session with no baseline', async () => {
+  it('creates an initial session with no baseline and instantiates the blocks', async () => {
     ownedBy(architect.id);
+    prisma.question.findMany.mockResolvedValue([{ id: 'q1' }, { id: 'q2' }]);
     prisma.session.create.mockResolvedValue({ id: SID });
+    prisma.clause.createMany.mockResolvedValue({ count: 2 });
     await service.create(architect, PID, { kind: SessionKind.initial });
     expect(prisma.session.create).toHaveBeenCalledWith({
       data: { partnershipId: PID, kind: SessionKind.initial, title: null, baselineSessionId: null },
+    });
+    expect(prisma.clause.createMany).toHaveBeenCalledWith({
+      data: [
+        { sessionId: SID, questionId: 'q1' },
+        { sessionId: SID, questionId: 'q2' },
+      ],
     });
   });
 
   it('creates a review session referencing a baseline in the same partnership', async () => {
     ownedBy(architect.id);
     prisma.session.findUnique.mockResolvedValue({ id: 'base', partnershipId: PID });
+    prisma.question.findMany.mockResolvedValue([{ id: 'q1' }]);
     prisma.session.create.mockResolvedValue({ id: SID });
+    prisma.clause.createMany.mockResolvedValue({ count: 1 });
     await service.create(architect, PID, {
       kind: SessionKind.review,
       title: 'Q2',
@@ -83,6 +99,9 @@ describe('SessionsService', () => {
         title: 'Q2',
         baselineSessionId: 'base',
       },
+    });
+    expect(prisma.clause.createMany).toHaveBeenCalledWith({
+      data: [{ sessionId: SID, questionId: 'q1' }],
     });
   });
 

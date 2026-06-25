@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { MIN_PARTNERS } from '../api/partners';
 import type { Session, SessionKind } from '../api/sessions';
@@ -72,7 +73,9 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
         {sessions.map((session) => (
           <li key={session.id} className="list-item">
             <span className="partner-name">
-              {sessionLabel(session)}
+              <Link to={`/partnerships/${partnershipId}/sessions/${session.id}`}>
+                {sessionLabel(session)}
+              </Link>
               <span className="muted"> · {t(kindLabelKey[session.kind])}</span>
             </span>
             <span className={`badge badge-${session.status}`}>

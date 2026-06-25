@@ -9,6 +9,7 @@ import { type Session, SessionKind, SessionStatus } from '@prisma/client';
 import type { AuthUser } from '../auth/auth.types';
 import { assertCanAccessOwned } from '../common/ownership';
 import { PrismaService } from '../prisma/prisma.service';
+import { QUESTION_SET_VERSION } from '../seed/questions';
 import type { CreateSessionDto } from './dto';
 
 /** A session needs at least this many partners before it can be started (FR-2.3/2.5). */
@@ -47,13 +48,29 @@ export class SessionsService {
         throw new BadRequestException('Baseline session not found in this partnership');
       }
     }
-    return this.prisma.session.create({
-      data: {
-        partnershipId,
-        kind: dto.kind,
-        title: dto.title ?? null,
-        baselineSessionId: dto.kind === SessionKind.review ? dto.baselineSessionId : null,
-      },
+    // FR-3.1: instantiate the 30 methodology blocks of the current question-set
+    // version as clauses, atomically with the session. (Review sessions start
+    // blank too; copying agreed wording from the baseline is FR-9.3, Phase 5.)
+    const questions = await this.prisma.question.findMany({
+      where: { questionSetVersion: QUESTION_SET_VERSION },
+      orderBy: { orderIndex: 'asc' },
+      select: { id: true },
+    });
+    return this.prisma.$transaction(async (tx) => {
+      const session = await tx.session.create({
+        data: {
+          partnershipId,
+          kind: dto.kind,
+          title: dto.title ?? null,
+          baselineSessionId: dto.kind === SessionKind.review ? dto.baselineSessionId : null,
+        },
+      });
+      if (questions.length > 0) {
+        await tx.clause.createMany({
+          data: questions.map((question) => ({ sessionId: session.id, questionId: question.id })),
+        });
+      }
+      return session;
     });
   }
 

@@ -246,3 +246,70 @@ section h3 {
   background: #dcfce7;
   color: #166534;
 }
+
+.badge-outline {
+  background: #fff;
+  border: 1px solid #cfd3da;
+  color: #374151;
+}
+
+.badge-heavy {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-agreed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-disputed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-parked {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-not_applicable {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.clause {
+  max-width: none;
+  gap: 0.5rem;
+}
+
+.clause-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.clause-head strong {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.clause p {
+  margin: 0;
+}
+
+.helpers {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.status-control {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}

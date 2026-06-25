@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import { PartnersModule } from './partners/partners.module';
 import { PartnershipsModule } from './partnerships/partnerships.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ScenarioModule } from './scenario/scenario.module';
 import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { SessionsModule } from './sessions/sessions.module';
     PartnershipsModule,
     PartnersModule,
     SessionsModule,
+    ScenarioModule,
     HealthModule,
   ],
 })
