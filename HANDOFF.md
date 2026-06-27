@@ -4,7 +4,7 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-06-25 — by: Watson
+**Last updated:** 2026-06-27 — by: Watson
 
 ## Current status
 
@@ -19,6 +19,23 @@ PHASE 1 IN PROGRESS — Steps **1.1–1.4 are live** on the Oracle host (Podman/
 - **Partner count bounds (2026-06-24):** a partnership may have **up to 5 partners** — a hard cap enforced when adding. The **minimum of 2 is not enforced** while editing partners (a partnership may temporarily have 0–1); it is validated later, when a session is started (step 1.3). This widens the spec's FR-2.3 upper bound ("2–4") to 5 per the owner's instruction.
 
 ## Active task
+
+### Oracle Podman logging deploy note (COMPLETE)
+- Owner: Watson — started: 2026-06-27; completed: 2026-06-27
+- Goal: Record the future-deploy instruction for the known Oracle Podman
+  `journald` noise issue without touching the live server or containers now.
+- Result: Added an Oracle Podman logging note to `deploy/README.md`. Next
+  controlled Podman recreate should move `psa-db`, `psa-api`, and `psa-web`
+  from `journald` logging to a file-backed log driver such as
+  `--log-driver=k8s-file --log-opt max-size=10mb`, preserving names, ports,
+  volumes, restart policy, and Caddy routing. Verify `podman logs` still works,
+  log size limits are in place, local and public health checks pass, HTTP
+  redirects to HTTPS, and `journalctl -b -p err..alert` no longer contains
+  normal startup/deprecation noise. Do not do a hot in-place logging tweak only
+  for cosmetics; change it only as part of a controlled deploy/recreate with a
+  rollback path.
+- Next step: On the next Watson-led production deploy/recreate, include the log
+  driver change in the Podman run parameters and perform the listed checks.
 
 ### Phase 1 — Cases, sessions, scenario, capture (in progress)
 - Owner: code-writing agent (Claude) — Plan committed: 2026-06-23
@@ -95,7 +112,6 @@ PHASE 1 IN PROGRESS — Steps **1.1–1.4 are live** on the Oracle host (Podman/
 - Notes: keep the Podman target (`deploy/podman/`) and `deploy/docker-compose.yml` as the reference runtime shape (ADR 0002). No CI/CD, deploy keys, server credentials, or secrets are committed — secrets stay only in the server-local `psa.env` (mode `600`).
 - Result: deployed commit `389a934` as release `/opt/partners-architector/releases/389a934`; `/opt/partners-architector/current` now points to it. Built and started `localhost/psa-api:389a934` and `localhost/psa-web:389a934` with the existing network, loopback ports, restart policy, and server-local secrets. The new API image first passed a separate candidate-container health/readiness check against the live database; rollback to the previous `3acaec9` images was prepared for the switch but was not needed. `psa-db` and `psa_pgdata` were not restarted or modified.
 - Verification: public SPA `200` from `158.101.210.207`; `/api/health` `200`; `/api/health/db` `200`; unauthenticated `/api/partnerships` `401` (route exists and is guarded); plain HTTP `308` to HTTPS. API startup logs show `PartnershipsModule`, all CRUD/archive/restore routes, and a successful Prisma database connection. Caddy and `podman-restart.service` are active; systemd is running with no failed units.
-
 ### First test deploy to Oracle (COMPLETE)
 - Owner: Watson — Plan committed: 2026-06-23; started: 2026-06-23
 - Goal: Manually deploy the completed Phase 0 stack to the Oracle production host behind Caddy at `https://partners-architector.duckdns.org/`, replacing the static placeholder with the web/API/PostgreSQL runtime stack.
@@ -132,6 +148,16 @@ PHASE 1 IN PROGRESS — Steps **1.1–1.4 are live** on the Oracle host (Podman/
 
 Most recent first.
 
+- **2026-06-27 — Recorded Oracle Podman logging future-deploy note.** Captured
+  the instruction for the next controlled Watson deploy/recreate: avoid the
+  Podman `journald` log driver for `psa-db`, `psa-api`, and `psa-web` because
+  `conmon` maps container stderr to journal priority 3, which makes normal
+  PostgreSQL/nginx/Prisma startup or deprecation output appear as
+  `journalctl -p err..alert` errors. Prefer a file-backed driver such as
+  `k8s-file` with a size limit, keep `podman logs` usable, preserve container
+  names/ports/volumes/restart policy/Caddy routing, and verify health plus
+  journal cleanliness after recreate. No server or live container changes were
+  made. — Watson
 - **2026-06-25 — Deployed Phase 1.4 scenario engine to Oracle.** Built API/web images from commit `fc06274`, preflighted the API against the live database in an isolated candidate container, then replaced only `psa-api` and `psa-web`; DB, volume, schema, and seed were untouched. External checks passed: SPA/health/db-health `200`, guarded nested clauses route `401` unauthenticated, HTTP→HTTPS `308`; `ScenarioModule`, both routes, Caddy, restart service, and systemd are healthy. Pruned only dangling build layers while retaining current and rollback images. — Watson
 - **2026-06-24 — Phase 1, step 1.4 (scenario engine).** Session creation now instantiates the 30 methodology blocks (question-set `mvp-draft-1`) as `clause` rows atomically, in fixed order (FR-3.1). Nested `scenario` API module (`@psa/api`): list a session's clauses with their question fields (number/title/prompt/helpers/category/heavy flag, ordered by `orderIndex`), and PATCH a clause's status with the FR-3.4 rule (`agreed` only when agreement text exists) and the FR-3.6 rule (`not_applicable` requires a reason; the reason is kept only while not-applicable) — owner-isolated through the session's partnership (`assertCanAccessOwned`, SEC-5). Web: a scenario page (`/partnerships/:id/sessions/:sid`, linked from the sessions panel) showing every block with category + heavy badges, a status selector (with the «неактуально» confirm + mandatory-reason dialog, and `agreed` disabled until there is text), and progress counters (agreed N of M, unclosed heavy, disputed/parked). Tests: service (ownership, agreed/na rules) + DTO validation (unit), and a full-stack smoke against Postgres (instantiate 30 ordered/not_started, status rules incl. 409/400/404, CSRF 403, cross-architect 403). No schema change and no re-seed — the `clause` table + enums exist since 0.4 and the questions are already seeded. Text capture (FR-4.x, which unlocks `agreed`) is step 1.5. lint/format/typecheck/build/test green. — code-writing agent (Claude)
 - **2026-06-24 — Deployed Phase 1.3 sessions to Oracle.** Built API/web images from commit `8a9808d`, preflighted the API against the live database in an isolated candidate container, then replaced only `psa-api` and `psa-web`; DB, volume, schema, and seed were untouched. External checks passed: SPA/health/db-health `200`, guarded nested sessions route `401` unauthenticated, HTTP→HTTPS `308`; Caddy/systemd/restart service healthy. Pruned only dangling build layers after verification. — Watson

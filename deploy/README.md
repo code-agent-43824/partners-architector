@@ -48,6 +48,21 @@ From the repository root, with `COMPOSE="docker compose --env-file deploy/.env -
 
 - **TLS:** terminate TLS at a reverse proxy (Caddy/nginx) in front of `web`
   for production, and set `AUTH_COOKIE_SECURE=true`. Not included here yet.
+- **Oracle Podman logging:** the current Oracle runtime is rootful Podman, not
+  Docker Compose. When recreating `psa-db`, `psa-api`, or `psa-web`, do not
+  keep the default `journald` log driver. `conmon` records container stderr as
+  journal priority 3, so normal PostgreSQL/nginx/Prisma startup or deprecation
+  messages appear in `journalctl -p err..alert` even when the stack is healthy.
+  During the next controlled deploy/recreate, prefer file-backed container logs,
+  for example `--log-driver=k8s-file --log-opt max-size=10mb`, while preserving
+  container names, ports, volumes, restart policy, and Caddy routing. Confirm
+  that `podman logs <container>` still works and that log size limits are in
+  place. If a file log driver is unsuitable, redirect only normal startup/info
+  application output away from stderr; real errors must remain visible. Do not
+  perform an in-place container tweak only to reduce journal noise.
+- **Oracle post-recreate checks:** after any Podman recreate, verify
+  `podman ps`, local health endpoints, public HTTPS endpoints, HTTP-to-HTTPS
+  redirect, and `journalctl -b -p err..alert`.
 - **Restricted/proxied networks:** if the build host routes egress through a
   TLS-intercepting proxy, the in-container package downloads need that proxy's
   CA — pass it via `NODE_EXTRA_CA_CERTS` at build time. Do not commit it.
