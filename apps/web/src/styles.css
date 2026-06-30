@@ -313,3 +313,13 @@ section h3 {
   align-items: center;
   gap: 0.5rem;
 }
+
+.clause-foot {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.save-state {
+  font-size: 0.8125rem;
+}

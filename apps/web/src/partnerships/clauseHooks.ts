@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { listClauses, updateClauseStatus, type UpdateClauseStatusInput } from '../api/scenario';
+import { listClauses, updateClause, type UpdateClauseInput } from '../api/scenario';
 
 const clausesKey = (partnershipId: string, sessionId: string) => [
   'clauses',
@@ -15,11 +15,11 @@ export function useClauses(partnershipId: string, sessionId: string) {
   });
 }
 
-export function useUpdateClauseStatus(partnershipId: string, sessionId: string) {
+export function useUpdateClause(partnershipId: string, sessionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (args: { clauseId: string; body: UpdateClauseStatusInput }) =>
-      updateClauseStatus(partnershipId, sessionId, args.clauseId, args.body),
+    mutationFn: (args: { clauseId: string; body: UpdateClauseInput }) =>
+      updateClause(partnershipId, sessionId, args.clauseId, args.body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: clausesKey(partnershipId, sessionId) });
     },

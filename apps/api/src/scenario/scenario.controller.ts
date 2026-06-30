@@ -5,7 +5,7 @@ import type { AuthUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { ZodBody } from '../common/zod-validation.pipe';
-import { type UpdateClauseStatusDto, updateClauseStatusSchema } from './dto';
+import { type UpdateClauseDto, updateClauseSchema } from './dto';
 import { ScenarioService } from './scenario.service';
 
 @Roles(Role.architect, Role.admin)
@@ -23,13 +23,13 @@ export class ScenarioController {
   }
 
   @Patch(':clauseId')
-  updateStatus(
+  update(
     @CurrentUser() user: AuthUser,
     @Param('partnershipId') partnershipId: string,
     @Param('sessionId') sessionId: string,
     @Param('clauseId') clauseId: string,
-    @Body(new ZodBody(updateClauseStatusSchema)) dto: UpdateClauseStatusDto,
+    @Body(new ZodBody(updateClauseSchema)) dto: UpdateClauseDto,
   ) {
-    return this.scenario.updateStatus(user, partnershipId, sessionId, clauseId, dto);
+    return this.scenario.updateClause(user, partnershipId, sessionId, clauseId, dto);
   }
 }

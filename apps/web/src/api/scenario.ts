@@ -32,20 +32,22 @@ export interface Clause {
   question: ClauseQuestion;
 }
 
-export interface UpdateClauseStatusInput {
-  status: ClauseStatus;
+export interface UpdateClauseInput {
+  status?: ClauseStatus;
   naReason?: string;
+  text?: string | null;
+  rationale?: string | null;
 }
 
 export function listClauses(partnershipId: string, sessionId: string): Promise<Clause[]> {
   return apiFetch<Clause[]>(`/partnerships/${partnershipId}/sessions/${sessionId}/clauses`);
 }
 
-export function updateClauseStatus(
+export function updateClause(
   partnershipId: string,
   sessionId: string,
   clauseId: string,
-  body: UpdateClauseStatusInput,
+  body: UpdateClauseInput,
 ): Promise<Clause> {
   return apiFetch<Clause>(
     `/partnerships/${partnershipId}/sessions/${sessionId}/clauses/${clauseId}`,

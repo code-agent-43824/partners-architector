@@ -4,7 +4,7 @@ import { type Clause, ClauseStatus } from '@prisma/client';
 import type { AuthUser } from '../auth/auth.types';
 import { assertCanAccessOwned } from '../common/ownership';
 import { PrismaService } from '../prisma/prisma.service';
-import type { UpdateClauseStatusDto } from './dto';
+import type { UpdateClauseDto } from './dto';
 
 /** Question fields surfaced alongside a clause for the scenario walk (FR-3.3). */
 const questionSelect = {
@@ -36,28 +36,41 @@ export class ScenarioService {
     });
   }
 
-  async updateStatus(
+  async updateClause(
     user: AuthUser,
     partnershipId: string,
     sessionId: string,
     clauseId: string,
-    dto: UpdateClauseStatusDto,
+    dto: UpdateClauseDto,
   ): Promise<Clause> {
     await this.assertSessionAccess(user, partnershipId, sessionId);
     const clause = await this.prisma.clause.findUnique({ where: { id: clauseId } });
     if (!clause || clause.sessionId !== sessionId) {
       throw new NotFoundException('Clause not found');
     }
-    // FR-3.4: "agreed" is only available when there is agreement text.
-    if (dto.status === ClauseStatus.agreed && !clause.text?.trim()) {
-      throw new ConflictException('A block can be marked agreed only when it has agreement text');
+
+    const statusData: { status?: ClauseStatus; naReason?: string | null } = {};
+    if (dto.status !== undefined) {
+      // FR-3.4: "agreed" is only available when there is agreement text —
+      // counting text being set in the same request.
+      const effectiveText = dto.text !== undefined ? dto.text : clause.text;
+      if (dto.status === ClauseStatus.agreed && !effectiveText?.trim()) {
+        throw new ConflictException('A block can be marked agreed only when it has agreement text');
+      }
+      statusData.status = dto.status;
+      // FR-3.6: keep the reason only while the block is "not applicable".
+      statusData.naReason =
+        dto.status === ClauseStatus.not_applicable ? (dto.naReason ?? null) : null;
     }
+
     return this.prisma.clause.update({
       where: { id: clauseId },
       data: {
-        status: dto.status,
-        // FR-3.6: keep the reason only while the block is "not applicable".
-        naReason: dto.status === ClauseStatus.not_applicable ? (dto.naReason ?? null) : null,
+        // FR-4.1/4.2: capture formulation text + rationale. Source stays
+        // `manual` (default) until AI drafting arrives in Phase 7.
+        ...(dto.text !== undefined ? { text: dto.text } : {}),
+        ...(dto.rationale !== undefined ? { rationale: dto.rationale } : {}),
+        ...statusData,
       },
     });
   }

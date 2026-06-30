@@ -67,7 +67,7 @@ describe('ScenarioService', () => {
     grantAccess();
     prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: 'other-session' });
     await expect(
-      service.updateStatus(architect, PID, SID, CID, { status: ClauseStatus.in_progress }),
+      service.updateClause(architect, PID, SID, CID, { status: ClauseStatus.in_progress }),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
@@ -75,12 +75,12 @@ describe('ScenarioService', () => {
     grantAccess();
     prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });
     await expect(
-      service.updateStatus(architect, PID, SID, CID, { status: ClauseStatus.agreed }),
+      service.updateClause(architect, PID, SID, CID, { status: ClauseStatus.agreed }),
     ).rejects.toBeInstanceOf(ConflictException);
 
     prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: 'agreed wording' });
     prisma.clause.update.mockResolvedValue({ id: CID, status: ClauseStatus.agreed });
-    await service.updateStatus(architect, PID, SID, CID, { status: ClauseStatus.agreed });
+    await service.updateClause(architect, PID, SID, CID, { status: ClauseStatus.agreed });
     expect(prisma.clause.update).toHaveBeenCalledWith({
       where: { id: CID },
       data: { status: ClauseStatus.agreed, naReason: null },
@@ -92,7 +92,7 @@ describe('ScenarioService', () => {
     prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });
     prisma.clause.update.mockResolvedValue({});
 
-    await service.updateStatus(architect, PID, SID, CID, {
+    await service.updateClause(architect, PID, SID, CID, {
       status: ClauseStatus.not_applicable,
       naReason: 'не наш случай',
     });
@@ -102,10 +102,38 @@ describe('ScenarioService', () => {
     });
 
     prisma.clause.update.mockClear();
-    await service.updateStatus(architect, PID, SID, CID, { status: ClauseStatus.parked });
+    await service.updateClause(architect, PID, SID, CID, { status: ClauseStatus.parked });
     expect(prisma.clause.update).toHaveBeenCalledWith({
       where: { id: CID },
       data: { status: ClauseStatus.parked, naReason: null },
+    });
+  });
+
+  it('saves formulation text and rationale', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });
+    prisma.clause.update.mockResolvedValue({});
+    await service.updateClause(architect, PID, SID, CID, {
+      text: 'agreed wording',
+      rationale: 'why',
+    });
+    expect(prisma.clause.update).toHaveBeenCalledWith({
+      where: { id: CID },
+      data: { text: 'agreed wording', rationale: 'why' },
+    });
+  });
+
+  it('allows "agreed" when text is provided in the same request', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });
+    prisma.clause.update.mockResolvedValue({});
+    await service.updateClause(architect, PID, SID, CID, {
+      status: ClauseStatus.agreed,
+      text: 'wording',
+    });
+    expect(prisma.clause.update).toHaveBeenCalledWith({
+      where: { id: CID },
+      data: { text: 'wording', status: ClauseStatus.agreed, naReason: null },
     });
   });
 });

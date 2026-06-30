@@ -1,11 +1,14 @@
 import { ClauseStatus } from '@prisma/client';
 import { z } from 'zod';
 
-export const updateClauseStatusSchema = z
+export const updateClauseSchema = z
   .object({
-    status: z.nativeEnum(ClauseStatus),
+    status: z.nativeEnum(ClauseStatus).optional(),
     naReason: z.string().trim().max(2000).optional(),
+    text: z.string().max(50_000).nullable().optional(),
+    rationale: z.string().max(10_000).nullable().optional(),
   })
+  .refine((value) => Object.keys(value).length > 0, { message: 'No fields to update' })
   .refine(
     (value) =>
       value.status !== ClauseStatus.not_applicable ||
@@ -15,4 +18,4 @@ export const updateClauseStatusSchema = z
       path: ['naReason'],
     },
   );
-export type UpdateClauseStatusDto = z.infer<typeof updateClauseStatusSchema>;
+export type UpdateClauseDto = z.infer<typeof updateClauseSchema>;

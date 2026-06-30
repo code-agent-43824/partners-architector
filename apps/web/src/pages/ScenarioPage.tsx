@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import type { Clause, ClauseStatus } from '../api/scenario';
 import { t, type TranslationKey } from '../i18n';
-import { useClauses, useUpdateClauseStatus } from '../partnerships/clauseHooks';
+import { useClauses, useUpdateClause } from '../partnerships/clauseHooks';
 
 const STATUSES: ClauseStatus[] = [
   'not_started',
@@ -77,7 +78,40 @@ interface ClauseCardProps {
 }
 
 function ClauseCard({ partnershipId, sessionId, clause }: ClauseCardProps) {
-  const update = useUpdateClauseStatus(partnershipId, sessionId);
+  const update = useUpdateClause(partnershipId, sessionId);
+  const [text, setText] = useState(clause.text ?? '');
+  const [rationale, setRationale] = useState(clause.rationale ?? '');
+  const [saved, setSaved] = useState(false);
+  const savedRef = useRef({ text: clause.text ?? '', rationale: clause.rationale ?? '' });
+
+  // FR-4.1: autosave the formulation + rationale with a short debounce (≤ 2s).
+  useEffect(() => {
+    if (text === savedRef.current.text && rationale === savedRef.current.rationale) {
+      return;
+    }
+    const handle = setTimeout(() => {
+      update.mutate(
+        { clauseId: clause.id, body: { text, rationale } },
+        {
+          onSuccess: () => {
+            savedRef.current = { text, rationale };
+            setSaved(true);
+          },
+        },
+      );
+    }, 1000);
+    return () => clearTimeout(handle);
+  }, [text, rationale, clause.id, update.mutate]);
+
+  function editText(value: string) {
+    setSaved(false);
+    setText(value);
+  }
+
+  function editRationale(value: string) {
+    setSaved(false);
+    setRationale(value);
+  }
 
   function onStatusChange(status: ClauseStatus) {
     if (status === clause.status) {
@@ -94,8 +128,15 @@ function ClauseCard({ partnershipId, sessionId, clause }: ClauseCardProps) {
       update.mutate({ clauseId: clause.id, body: { status, naReason: reason.trim() } });
       return;
     }
+    if (status === 'agreed') {
+      // Include the current text so the API's agreed-requires-text guard sees it.
+      update.mutate({ clauseId: clause.id, body: { status, text, rationale } });
+      return;
+    }
     update.mutate({ clauseId: clause.id, body: { status } });
   }
+
+  const hasText = text.trim().length > 0;
 
   return (
     <li className="card clause">
@@ -127,24 +168,38 @@ function ClauseCard({ partnershipId, sessionId, clause }: ClauseCardProps) {
         </p>
       ) : null}
 
-      <label className="status-control">
-        {t('scenario.statusLabel')}
-        <select
-          value={clause.status}
-          disabled={update.isPending}
-          onChange={(event) => onStatusChange(event.target.value as ClauseStatus)}
-        >
-          {STATUSES.map((status) => (
-            <option
-              key={status}
-              value={status}
-              disabled={status === 'agreed' && !clause.text?.trim()}
-            >
-              {t(statusLabelKey[status])}
-            </option>
-          ))}
-        </select>
+      <label>
+        {t('capture.textLabel')}
+        <textarea value={text} onChange={(event) => editText(event.target.value)} rows={3} />
       </label>
+      <label>
+        {t('capture.rationaleLabel')}
+        <textarea
+          value={rationale}
+          onChange={(event) => editRationale(event.target.value)}
+          rows={2}
+        />
+      </label>
+
+      <div className="clause-foot">
+        <label className="status-control">
+          {t('scenario.statusLabel')}
+          <select
+            value={clause.status}
+            disabled={update.isPending}
+            onChange={(event) => onStatusChange(event.target.value as ClauseStatus)}
+          >
+            {STATUSES.map((status) => (
+              <option key={status} value={status} disabled={status === 'agreed' && !hasText}>
+                {t(statusLabelKey[status])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="muted save-state">
+          {update.isPending ? t('capture.saving') : saved ? t('capture.saved') : ''}
+        </span>
+      </div>
       {update.isError ? <p className="error">{t('common.error')}</p> : null}
     </li>
   );

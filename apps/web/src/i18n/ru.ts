@@ -80,6 +80,10 @@ export const ru = {
   'scenario.naReasonPrompt': 'Укажите причину, почему блок неактуален:',
   'scenario.naWarning':
     'Методика предупреждает: пометка «неактуально» — частый способ уйти от трудного разговора. Отмечайте блок неактуальным только осознанно. Дальше потребуется указать причину.',
+  'capture.textLabel': 'Формулировка договорённости',
+  'capture.rationaleLabel': 'Мотивация / пояснение',
+  'capture.saving': 'Сохранение…',
+  'capture.saved': 'Сохранено',
 } as const;
 
 export type TranslationKey = keyof typeof ru;
