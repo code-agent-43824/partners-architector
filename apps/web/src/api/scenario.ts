@@ -18,6 +18,14 @@ export interface ClauseQuestion {
   orderIndex: number;
 }
 
+export interface ClauseSignoff {
+  id: string;
+  clauseId: string;
+  partnerId: string;
+  agreed: boolean;
+  signedAt: string | null;
+}
+
 export interface Clause {
   id: string;
   sessionId: string;
@@ -30,6 +38,7 @@ export interface Clause {
   createdAt: string;
   updatedAt: string;
   question: ClauseQuestion;
+  signoffs: ClauseSignoff[];
 }
 
 export interface UpdateClauseInput {
@@ -52,5 +61,18 @@ export function updateClause(
   return apiFetch<Clause>(
     `/partnerships/${partnershipId}/sessions/${sessionId}/clauses/${clauseId}`,
     { method: 'PATCH', body },
+  );
+}
+
+export function setClauseSignoff(
+  partnershipId: string,
+  sessionId: string,
+  clauseId: string,
+  partnerId: string,
+  agreed: boolean,
+): Promise<ClauseSignoff> {
+  return apiFetch<ClauseSignoff>(
+    `/partnerships/${partnershipId}/sessions/${sessionId}/clauses/${clauseId}/signoffs/${partnerId}`,
+    { method: 'PUT', body: { agreed } },
   );
 }

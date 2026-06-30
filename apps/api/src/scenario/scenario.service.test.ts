@@ -17,12 +17,15 @@ const OTHER_OWNER = 'arch-2';
 const PID = 'p-1';
 const SID = 's-1';
 const CID = 'c-1';
+const PARTNER = 'partner-1';
 
 function makePrisma() {
   return {
     partnership: { findUnique: vi.fn() },
     session: { findUnique: vi.fn() },
+    partner: { findUnique: vi.fn() },
     clause: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    clauseSignoff: { upsert: vi.fn() },
   };
 }
 
@@ -135,5 +138,52 @@ describe('ScenarioService', () => {
       where: { id: CID },
       data: { text: 'wording', status: ClauseStatus.agreed, naReason: null },
     });
+  });
+
+  function grantSignoffAccess() {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ sessionId: SID });
+    prisma.partner.findUnique.mockResolvedValue({ partnershipId: PID });
+  }
+
+  it('setSignoff upserts a partner agreement with a timestamp', async () => {
+    grantSignoffAccess();
+    prisma.clauseSignoff.upsert.mockResolvedValue({});
+    await service.setSignoff(architect, PID, SID, CID, PARTNER, { agreed: true });
+    expect(prisma.clauseSignoff.upsert).toHaveBeenCalledWith({
+      where: { clauseId_partnerId: { clauseId: CID, partnerId: PARTNER } },
+      update: { agreed: true, signedAt: expect.any(Date) },
+      create: { clauseId: CID, partnerId: PARTNER, agreed: true, signedAt: expect.any(Date) },
+    });
+  });
+
+  it('setSignoff clears the timestamp when agreed is false', async () => {
+    grantSignoffAccess();
+    prisma.clauseSignoff.upsert.mockResolvedValue({});
+    await service.setSignoff(architect, PID, SID, CID, PARTNER, { agreed: false });
+    expect(prisma.clauseSignoff.upsert).toHaveBeenCalledWith({
+      where: { clauseId_partnerId: { clauseId: CID, partnerId: PARTNER } },
+      update: { agreed: false, signedAt: null },
+      create: { clauseId: CID, partnerId: PARTNER, agreed: false, signedAt: null },
+    });
+  });
+
+  it('setSignoff rejects a partner from another partnership', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ sessionId: SID });
+    prisma.partner.findUnique.mockResolvedValue({ partnershipId: 'other' });
+    await expect(
+      service.setSignoff(architect, PID, SID, CID, PARTNER, { agreed: true }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.clauseSignoff.upsert).not.toHaveBeenCalled();
+  });
+
+  it('setSignoff rejects a clause from another session', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ sessionId: 'other-session' });
+    await expect(
+      service.setSignoff(architect, PID, SID, CID, PARTNER, { agreed: true }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.clauseSignoff.upsert).not.toHaveBeenCalled();
   });
 });

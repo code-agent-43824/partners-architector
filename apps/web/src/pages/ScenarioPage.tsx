@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import type { Partner } from '../api/partners';
 import type { Clause, ClauseStatus } from '../api/scenario';
 import { t, type TranslationKey } from '../i18n';
-import { useClauses, useUpdateClause } from '../partnerships/clauseHooks';
+import { useClauses, useSetSignoff, useUpdateClause } from '../partnerships/clauseHooks';
+import { usePartners } from '../partnerships/partnerHooks';
 
 const STATUSES: ClauseStatus[] = [
   'not_started',
@@ -28,6 +30,7 @@ const OPEN_HEAVY_EXCLUDED: ClauseStatus[] = ['agreed', 'not_applicable'];
 export function ScenarioPage() {
   const { partnershipId = '', sessionId = '' } = useParams();
   const query = useClauses(partnershipId, sessionId);
+  const partnersQuery = usePartners(partnershipId);
 
   if (query.isLoading) {
     return <p className="muted">{t('common.loading')}</p>;
@@ -37,6 +40,7 @@ export function ScenarioPage() {
   }
 
   const clauses = query.data;
+  const partners = partnersQuery.data ?? [];
   const total = clauses.length;
   const agreed = clauses.filter((c) => c.status === 'agreed').length;
   const heavyOpen = clauses.filter(
@@ -64,6 +68,7 @@ export function ScenarioPage() {
             partnershipId={partnershipId}
             sessionId={sessionId}
             clause={clause}
+            partners={partners}
           />
         ))}
       </ul>
@@ -75,10 +80,12 @@ interface ClauseCardProps {
   partnershipId: string;
   sessionId: string;
   clause: Clause;
+  partners: Partner[];
 }
 
-function ClauseCard({ partnershipId, sessionId, clause }: ClauseCardProps) {
+function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardProps) {
   const update = useUpdateClause(partnershipId, sessionId);
+  const signoff = useSetSignoff(partnershipId, sessionId);
   const [text, setText] = useState(clause.text ?? '');
   const [rationale, setRationale] = useState(clause.rationale ?? '');
   const [saved, setSaved] = useState(false);
@@ -137,6 +144,9 @@ function ClauseCard({ partnershipId, sessionId, clause }: ClauseCardProps) {
   }
 
   const hasText = text.trim().length > 0;
+  const signoffByPartner = new Map(clause.signoffs.map((s) => [s.partnerId, s]));
+  const allAgreed =
+    partners.length > 0 && partners.every((p) => signoffByPartner.get(p.id)?.agreed);
 
   return (
     <li className="card clause">
@@ -180,6 +190,30 @@ function ClauseCard({ partnershipId, sessionId, clause }: ClauseCardProps) {
           rows={2}
         />
       </label>
+
+      {partners.length > 0 ? (
+        <div className="signoffs">
+          <span className="muted">{t('capture.signoffs')}:</span>
+          {partners.map((partner) => (
+            <label key={partner.id} className="checkbox">
+              <input
+                type="checkbox"
+                checked={signoffByPartner.get(partner.id)?.agreed ?? false}
+                disabled={signoff.isPending}
+                onChange={(event) =>
+                  signoff.mutate({
+                    clauseId: clause.id,
+                    partnerId: partner.id,
+                    agreed: event.target.checked,
+                  })
+                }
+              />
+              {partner.fullName}
+            </label>
+          ))}
+          {allAgreed ? <span className="badge badge-agreed">{t('capture.confirmed')}</span> : null}
+        </div>
+      ) : null}
 
       <div className="clause-foot">
         <label className="status-control">

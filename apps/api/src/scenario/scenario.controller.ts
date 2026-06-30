@@ -1,11 +1,16 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Put } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
 import type { AuthUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { ZodBody } from '../common/zod-validation.pipe';
-import { type UpdateClauseDto, updateClauseSchema } from './dto';
+import {
+  type SetSignoffDto,
+  setSignoffSchema,
+  type UpdateClauseDto,
+  updateClauseSchema,
+} from './dto';
 import { ScenarioService } from './scenario.service';
 
 @Roles(Role.architect, Role.admin)
@@ -31,5 +36,17 @@ export class ScenarioController {
     @Body(new ZodBody(updateClauseSchema)) dto: UpdateClauseDto,
   ) {
     return this.scenario.updateClause(user, partnershipId, sessionId, clauseId, dto);
+  }
+
+  @Put(':clauseId/signoffs/:partnerId')
+  setSignoff(
+    @CurrentUser() user: AuthUser,
+    @Param('partnershipId') partnershipId: string,
+    @Param('sessionId') sessionId: string,
+    @Param('clauseId') clauseId: string,
+    @Param('partnerId') partnerId: string,
+    @Body(new ZodBody(setSignoffSchema)) dto: SetSignoffDto,
+  ) {
+    return this.scenario.setSignoff(user, partnershipId, sessionId, clauseId, partnerId, dto);
   }
 }

@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { listClauses, updateClause, type UpdateClauseInput } from '../api/scenario';
+import {
+  listClauses,
+  setClauseSignoff,
+  updateClause,
+  type UpdateClauseInput,
+} from '../api/scenario';
 
 const clausesKey = (partnershipId: string, sessionId: string) => [
   'clauses',
@@ -20,6 +25,17 @@ export function useUpdateClause(partnershipId: string, sessionId: string) {
   return useMutation({
     mutationFn: (args: { clauseId: string; body: UpdateClauseInput }) =>
       updateClause(partnershipId, sessionId, args.clauseId, args.body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: clausesKey(partnershipId, sessionId) });
+    },
+  });
+}
+
+export function useSetSignoff(partnershipId: string, sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { clauseId: string; partnerId: string; agreed: boolean }) =>
+      setClauseSignoff(partnershipId, sessionId, args.clauseId, args.partnerId, args.agreed),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: clausesKey(partnershipId, sessionId) });
     },

@@ -1,7 +1,7 @@
 import { ClauseStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
-import { updateClauseSchema } from './dto';
+import { setSignoffSchema, updateClauseSchema } from './dto';
 
 describe('clause update DTO', () => {
   it('accepts a plain status change and a text-only save', () => {
@@ -29,5 +29,12 @@ describe('clause update DTO', () => {
 
   it('rejects an unknown status', () => {
     expect(updateClauseSchema.safeParse({ status: 'archived' }).success).toBe(false);
+  });
+
+  it('sign-off requires a boolean agreed', () => {
+    expect(setSignoffSchema.safeParse({ agreed: true }).success).toBe(true);
+    expect(setSignoffSchema.safeParse({ agreed: false }).success).toBe(true);
+    expect(setSignoffSchema.safeParse({}).success).toBe(false);
+    expect(setSignoffSchema.safeParse({ agreed: 'yes' }).success).toBe(false);
   });
 });

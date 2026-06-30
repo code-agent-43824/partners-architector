@@ -1,10 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Clause, ClauseStatus } from '@prisma/client';
+import { type Clause, type ClauseSignoff, ClauseStatus } from '@prisma/client';
 
 import type { AuthUser } from '../auth/auth.types';
 import { assertCanAccessOwned } from '../common/ownership';
 import { PrismaService } from '../prisma/prisma.service';
-import type { UpdateClauseDto } from './dto';
+import type { SetSignoffDto, UpdateClauseDto } from './dto';
 
 /** Question fields surfaced alongside a clause for the scenario walk (FR-3.3). */
 const questionSelect = {
@@ -32,7 +32,43 @@ export class ScenarioService {
     return this.prisma.clause.findMany({
       where: { sessionId },
       orderBy: { question: { orderIndex: 'asc' } },
-      include: { question: { select: questionSelect } },
+      include: { question: { select: questionSelect }, signoffs: true },
+    });
+  }
+
+  /**
+   * Set a partner's sign-off on a clause (FR-4.3): per-partner `agreed` with a
+   * timestamp. A clause is "fully confirmed" once every partner has agreed —
+   * the web derives that from the sign-offs returned by {@link listClauses}.
+   */
+  async setSignoff(
+    user: AuthUser,
+    partnershipId: string,
+    sessionId: string,
+    clauseId: string,
+    partnerId: string,
+    dto: SetSignoffDto,
+  ): Promise<ClauseSignoff> {
+    await this.assertSessionAccess(user, partnershipId, sessionId);
+    const clause = await this.prisma.clause.findUnique({
+      where: { id: clauseId },
+      select: { sessionId: true },
+    });
+    if (!clause || clause.sessionId !== sessionId) {
+      throw new NotFoundException('Clause not found');
+    }
+    const partner = await this.prisma.partner.findUnique({
+      where: { id: partnerId },
+      select: { partnershipId: true },
+    });
+    if (!partner || partner.partnershipId !== partnershipId) {
+      throw new NotFoundException('Partner not found');
+    }
+    const signedAt = dto.agreed ? new Date() : null;
+    return this.prisma.clauseSignoff.upsert({
+      where: { clauseId_partnerId: { clauseId, partnerId } },
+      update: { agreed: dto.agreed, signedAt },
+      create: { clauseId, partnerId, agreed: dto.agreed, signedAt },
     });
   }
 

@@ -323,3 +323,10 @@ section h3 {
 .save-state {
   font-size: 0.8125rem;
 }
+
+.signoffs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}

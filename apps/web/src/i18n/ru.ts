@@ -84,6 +84,8 @@ export const ru = {
   'capture.rationaleLabel': 'Мотивация / пояснение',
   'capture.saving': 'Сохранение…',
   'capture.saved': 'Сохранено',
+  'capture.signoffs': 'Подтверждения партнёров',
+  'capture.confirmed': '✓ подтверждено всеми',
 } as const;
 
 export type TranslationKey = keyof typeof ru;

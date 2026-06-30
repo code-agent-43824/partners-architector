@@ -19,3 +19,6 @@ export const updateClauseSchema = z
     },
   );
 export type UpdateClauseDto = z.infer<typeof updateClauseSchema>;
+
+export const setSignoffSchema = z.object({ agreed: z.boolean() });
+export type SetSignoffDto = z.infer<typeof setSignoffSchema>;
