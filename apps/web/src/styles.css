@@ -342,3 +342,56 @@ section h3 {
   flex-basis: 100%;
   margin: 0;
 }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.rte {
+  border: 1px solid #cfd3da;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.rte-toolbar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-bottom: 1px solid #e2e4e8;
+}
+
+.rte-toolbar button {
+  min-width: 1.75rem;
+  padding: 0.125rem 0.5rem;
+  background: #f5f6f8;
+  color: #1a1a1a;
+  font-size: 0.9375rem;
+}
+
+.rte-toolbar button.active {
+  background: #2f6df6;
+  color: #fff;
+}
+
+.rte-content {
+  padding: 0.5rem 0.625rem;
+  min-height: 4rem;
+  outline: none;
+  font-size: 1rem;
+}
+
+.rte-content p {
+  margin: 0 0 0.5rem;
+}
+
+.rte-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rte-content ul {
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+}

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import type { Partner } from '../api/partners';
 import type { Clause, ClauseStatus } from '../api/scenario';
+import { RichTextEditor } from '../components/RichTextEditor';
 import { t, type TranslationKey } from '../i18n';
 import {
   useClauses,
@@ -33,6 +34,15 @@ const statusLabelKey: Record<ClauseStatus, TranslationKey> = {
 };
 
 const OPEN_HEAVY_EXCLUDED: ClauseStatus[] = ['agreed', 'not_applicable'];
+
+/** Plain-text preview of a stored formulation (which may be TipTap HTML). */
+function previewText(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+}
 
 export function ScenarioPage() {
   const { partnershipId = '', sessionId = '' } = useParams();
@@ -206,10 +216,10 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
         </p>
       ) : null}
 
-      <label>
-        {t('capture.textLabel')}
-        <textarea value={text} onChange={(event) => editText(event.target.value)} rows={3} />
-      </label>
+      <div className="field">
+        <span className="field-label">{t('capture.textLabel')}</span>
+        <RichTextEditor value={text} onChange={editText} ariaLabel={t('capture.textLabel')} />
+      </div>
       <label>
         {t('capture.rationaleLabel')}
         <textarea
@@ -288,8 +298,8 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
                   {new Date(version.editedAt).toLocaleString('ru-RU')} ·{' '}
                   {t(statusLabelKey[version.status])}
                   {version.note ? ` · ${version.note}` : ''}
-                  {version.text ? (
-                    <span className="muted"> — {version.text.slice(0, 80)}</span>
+                  {version.text && previewText(version.text) ? (
+                    <span className="muted"> — {previewText(version.text)}</span>
                   ) : null}
                 </span>
                 <button
