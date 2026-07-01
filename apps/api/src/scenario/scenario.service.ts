@@ -1,10 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Clause, type ClauseSignoff, ClauseStatus } from '@prisma/client';
+import { type Clause, type ClauseSignoff, ClauseStatus, type ClauseVersion } from '@prisma/client';
 
 import type { AuthUser } from '../auth/auth.types';
 import { assertCanAccessOwned } from '../common/ownership';
 import { PrismaService } from '../prisma/prisma.service';
-import type { SetSignoffDto, UpdateClauseDto } from './dto';
+import type { SaveVersionDto, SetSignoffDto, UpdateClauseDto } from './dto';
 
 /** Question fields surfaced alongside a clause for the scenario walk (FR-3.3). */
 const questionSelect = {
@@ -80,10 +80,7 @@ export class ScenarioService {
     dto: UpdateClauseDto,
   ): Promise<Clause> {
     await this.assertSessionAccess(user, partnershipId, sessionId);
-    const clause = await this.prisma.clause.findUnique({ where: { id: clauseId } });
-    if (!clause || clause.sessionId !== sessionId) {
-      throw new NotFoundException('Clause not found');
-    }
+    const clause = await this.getClauseInSession(clauseId, sessionId);
 
     const statusData: { status?: ClauseStatus; naReason?: string | null } = {};
     if (dto.status !== undefined) {
@@ -99,15 +96,78 @@ export class ScenarioService {
         dto.status === ClauseStatus.not_applicable ? (dto.naReason ?? null) : null;
     }
 
-    return this.prisma.clause.update({
-      where: { id: clauseId },
-      data: {
-        // FR-4.1/4.2: capture formulation text + rationale. Source stays
-        // `manual` (default) until AI drafting arrives in Phase 7.
-        ...(dto.text !== undefined ? { text: dto.text } : {}),
-        ...(dto.rationale !== undefined ? { rationale: dto.rationale } : {}),
-        ...statusData,
-      },
+    const data = {
+      // FR-4.1/4.2: capture formulation text + rationale. Source stays
+      // `manual` (default) until AI drafting arrives in Phase 7.
+      ...(dto.text !== undefined ? { text: dto.text } : {}),
+      ...(dto.rationale !== undefined ? { rationale: dto.rationale } : {}),
+      ...statusData,
+    };
+
+    // FR-4.4: a transition to "agreed" is a significant event — snapshot the
+    // agreed formulation as a version alongside the update.
+    const becameAgreed =
+      dto.status === ClauseStatus.agreed && clause.status !== ClauseStatus.agreed;
+    if (!becameAgreed) {
+      return this.prisma.clause.update({ where: { id: clauseId }, data });
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.clause.update({ where: { id: clauseId }, data });
+      await tx.clauseVersion.create({ data: this.versionData(updated, null) });
+      return updated;
+    });
+  }
+
+  async listVersions(
+    user: AuthUser,
+    partnershipId: string,
+    sessionId: string,
+    clauseId: string,
+  ): Promise<ClauseVersion[]> {
+    await this.assertSessionAccess(user, partnershipId, sessionId);
+    await this.getClauseInSession(clauseId, sessionId);
+    return this.prisma.clauseVersion.findMany({
+      where: { clauseId },
+      orderBy: { editedAt: 'desc' },
+    });
+  }
+
+  /** Explicitly snapshot the clause's current formulation as a version (FR-4.4). */
+  async saveVersion(
+    user: AuthUser,
+    partnershipId: string,
+    sessionId: string,
+    clauseId: string,
+    dto: SaveVersionDto,
+  ): Promise<ClauseVersion> {
+    await this.assertSessionAccess(user, partnershipId, sessionId);
+    const clause = await this.getClauseInSession(clauseId, sessionId);
+    return this.prisma.clauseVersion.create({ data: this.versionData(clause, dto.note ?? null) });
+  }
+
+  /**
+   * Roll the clause back to a past version (FR-4.4). The current formulation is
+   * snapshotted first, so a restore never loses work and can itself be undone.
+   */
+  async restoreVersion(
+    user: AuthUser,
+    partnershipId: string,
+    sessionId: string,
+    clauseId: string,
+    versionId: string,
+  ): Promise<Clause> {
+    await this.assertSessionAccess(user, partnershipId, sessionId);
+    const clause = await this.getClauseInSession(clauseId, sessionId);
+    const version = await this.prisma.clauseVersion.findUnique({ where: { id: versionId } });
+    if (!version || version.clauseId !== clauseId) {
+      throw new NotFoundException('Version not found');
+    }
+    return this.prisma.$transaction(async (tx) => {
+      await tx.clauseVersion.create({ data: this.versionData(clause, null) });
+      return tx.clause.update({
+        where: { id: clauseId },
+        data: { text: version.text, rationale: version.rationale, status: version.status },
+      });
     });
   }
 
@@ -131,5 +191,26 @@ export class ScenarioService {
     if (!session || session.partnershipId !== partnershipId) {
       throw new NotFoundException('Session not found');
     }
+  }
+
+  private async getClauseInSession(clauseId: string, sessionId: string): Promise<Clause> {
+    const clause = await this.prisma.clause.findUnique({ where: { id: clauseId } });
+    if (!clause || clause.sessionId !== sessionId) {
+      throw new NotFoundException('Clause not found');
+    }
+    return clause;
+  }
+
+  private versionData(
+    clause: { id: string; text: string | null; rationale: string | null; status: ClauseStatus },
+    note: string | null,
+  ) {
+    return {
+      clauseId: clause.id,
+      text: clause.text,
+      rationale: clause.rationale,
+      status: clause.status,
+      note,
+    };
   }
 }

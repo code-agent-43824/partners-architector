@@ -1,7 +1,7 @@
 import { ClauseStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
-import { setSignoffSchema, updateClauseSchema } from './dto';
+import { saveVersionSchema, setSignoffSchema, updateClauseSchema } from './dto';
 
 describe('clause update DTO', () => {
   it('accepts a plain status change and a text-only save', () => {
@@ -36,5 +36,10 @@ describe('clause update DTO', () => {
     expect(setSignoffSchema.safeParse({ agreed: false }).success).toBe(true);
     expect(setSignoffSchema.safeParse({}).success).toBe(false);
     expect(setSignoffSchema.safeParse({ agreed: 'yes' }).success).toBe(false);
+  });
+
+  it('save-version accepts an optional note', () => {
+    expect(saveVersionSchema.safeParse({}).success).toBe(true);
+    expect(saveVersionSchema.safeParse({ note: 'checkpoint' }).success).toBe(true);
   });
 });

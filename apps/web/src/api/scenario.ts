@@ -41,6 +41,16 @@ export interface Clause {
   signoffs: ClauseSignoff[];
 }
 
+export interface ClauseVersion {
+  id: string;
+  clauseId: string;
+  text: string | null;
+  rationale: string | null;
+  status: ClauseStatus;
+  note: string | null;
+  editedAt: string;
+}
+
 export interface UpdateClauseInput {
   status?: ClauseStatus;
   naReason?: string;
@@ -74,5 +84,39 @@ export function setClauseSignoff(
   return apiFetch<ClauseSignoff>(
     `/partnerships/${partnershipId}/sessions/${sessionId}/clauses/${clauseId}/signoffs/${partnerId}`,
     { method: 'PUT', body: { agreed } },
+  );
+}
+
+export function listClauseVersions(
+  partnershipId: string,
+  sessionId: string,
+  clauseId: string,
+): Promise<ClauseVersion[]> {
+  return apiFetch<ClauseVersion[]>(
+    `/partnerships/${partnershipId}/sessions/${sessionId}/clauses/${clauseId}/versions`,
+  );
+}
+
+export function saveClauseVersion(
+  partnershipId: string,
+  sessionId: string,
+  clauseId: string,
+  note?: string,
+): Promise<ClauseVersion> {
+  return apiFetch<ClauseVersion>(
+    `/partnerships/${partnershipId}/sessions/${sessionId}/clauses/${clauseId}/versions`,
+    { method: 'POST', body: { note } },
+  );
+}
+
+export function restoreClauseVersion(
+  partnershipId: string,
+  sessionId: string,
+  clauseId: string,
+  versionId: string,
+): Promise<Clause> {
+  return apiFetch<Clause>(
+    `/partnerships/${partnershipId}/sessions/${sessionId}/clauses/${clauseId}/versions/${versionId}/restore`,
+    { method: 'POST' },
   );
 }

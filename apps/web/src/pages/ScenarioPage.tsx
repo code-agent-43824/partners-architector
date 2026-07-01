@@ -4,7 +4,14 @@ import { Link, useParams } from 'react-router-dom';
 import type { Partner } from '../api/partners';
 import type { Clause, ClauseStatus } from '../api/scenario';
 import { t, type TranslationKey } from '../i18n';
-import { useClauses, useSetSignoff, useUpdateClause } from '../partnerships/clauseHooks';
+import {
+  useClauses,
+  useClauseVersions,
+  useRestoreVersion,
+  useSaveVersion,
+  useSetSignoff,
+  useUpdateClause,
+} from '../partnerships/clauseHooks';
 import { usePartners } from '../partnerships/partnerHooks';
 
 const STATUSES: ClauseStatus[] = [
@@ -86,6 +93,10 @@ interface ClauseCardProps {
 function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardProps) {
   const update = useUpdateClause(partnershipId, sessionId);
   const signoff = useSetSignoff(partnershipId, sessionId);
+  const [showVersions, setShowVersions] = useState(false);
+  const versions = useClauseVersions(partnershipId, sessionId, clause.id, showVersions);
+  const saveVersion = useSaveVersion(partnershipId, sessionId);
+  const restoreVersion = useRestoreVersion(partnershipId, sessionId);
   const [text, setText] = useState(clause.text ?? '');
   const [rationale, setRationale] = useState(clause.rationale ?? '');
   const [saved, setSaved] = useState(false);
@@ -141,6 +152,23 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
       return;
     }
     update.mutate({ clauseId: clause.id, body: { status } });
+  }
+
+  function onRestore(versionId: string) {
+    if (!window.confirm(t('history.restoreConfirm'))) {
+      return;
+    }
+    restoreVersion.mutate(
+      { clauseId: clause.id, versionId },
+      {
+        onSuccess: (updated) => {
+          setText(updated.text ?? '');
+          setRationale(updated.rationale ?? '');
+          savedRef.current = { text: updated.text ?? '', rationale: updated.rationale ?? '' };
+          setSaved(false);
+        },
+      },
+    );
   }
 
   const hasText = text.trim().length > 0;
@@ -235,6 +263,48 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
         </span>
       </div>
       {update.isError ? <p className="error">{t('common.error')}</p> : null}
+
+      <div className="versions">
+        <button type="button" className="link" onClick={() => setShowVersions((value) => !value)}>
+          {showVersions ? t('history.hide') : t('history.show')}
+        </button>
+        <button
+          type="button"
+          className="link"
+          disabled={saveVersion.isPending}
+          onClick={() => saveVersion.mutate({ clauseId: clause.id })}
+        >
+          {t('history.save')}
+        </button>
+        {showVersions ? (
+          <ul className="list versions-list">
+            {versions.isLoading ? <li className="muted">{t('common.loading')}</li> : null}
+            {versions.data && versions.data.length === 0 ? (
+              <li className="muted">{t('history.empty')}</li>
+            ) : null}
+            {(versions.data ?? []).map((version) => (
+              <li key={version.id} className="list-item">
+                <span className="partner-name">
+                  {new Date(version.editedAt).toLocaleString('ru-RU')} ·{' '}
+                  {t(statusLabelKey[version.status])}
+                  {version.note ? ` · ${version.note}` : ''}
+                  {version.text ? (
+                    <span className="muted"> — {version.text.slice(0, 80)}</span>
+                  ) : null}
+                </span>
+                <button
+                  type="button"
+                  className="link"
+                  disabled={restoreVersion.isPending}
+                  onClick={() => onRestore(version.id)}
+                >
+                  {t('history.restore')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
     </li>
   );
 }

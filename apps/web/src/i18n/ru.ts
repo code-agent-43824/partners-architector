@@ -86,6 +86,13 @@ export const ru = {
   'capture.saved': 'Сохранено',
   'capture.signoffs': 'Подтверждения партнёров',
   'capture.confirmed': '✓ подтверждено всеми',
+  'history.show': 'История версий',
+  'history.hide': 'Скрыть историю',
+  'history.save': 'Сохранить версию',
+  'history.restore': 'Откатить',
+  'history.restoreConfirm':
+    'Откатить блок к этой версии? Текущая формулировка сохранится в истории.',
+  'history.empty': 'Версий пока нет.',
 } as const;
 
 export type TranslationKey = keyof typeof ru;

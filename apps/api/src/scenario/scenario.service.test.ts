@@ -18,15 +18,20 @@ const PID = 'p-1';
 const SID = 's-1';
 const CID = 'c-1';
 const PARTNER = 'partner-1';
+const VID = 'v-1';
 
 function makePrisma() {
-  return {
+  const prisma = {
     partnership: { findUnique: vi.fn() },
     session: { findUnique: vi.fn() },
     partner: { findUnique: vi.fn() },
     clause: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     clauseSignoff: { upsert: vi.fn() },
+    clauseVersion: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn() },
+    $transaction: vi.fn(),
   };
+  prisma.$transaction.mockImplementation((cb: (tx: typeof prisma) => unknown) => cb(prisma));
+  return prisma;
 }
 
 describe('ScenarioService', () => {
@@ -185,5 +190,116 @@ describe('ScenarioService', () => {
       service.setSignoff(architect, PID, SID, CID, PARTNER, { agreed: true }),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(prisma.clauseSignoff.upsert).not.toHaveBeenCalled();
+  });
+
+  it('snapshots a version when a block transitions to agreed', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({
+      id: CID,
+      sessionId: SID,
+      text: null,
+      status: ClauseStatus.in_progress,
+    });
+    prisma.clause.update.mockResolvedValue({
+      id: CID,
+      text: 'wording',
+      rationale: null,
+      status: ClauseStatus.agreed,
+    });
+    await service.updateClause(architect, PID, SID, CID, {
+      status: ClauseStatus.agreed,
+      text: 'wording',
+    });
+    expect(prisma.clauseVersion.create).toHaveBeenCalledWith({
+      data: {
+        clauseId: CID,
+        text: 'wording',
+        rationale: null,
+        status: ClauseStatus.agreed,
+        note: null,
+      },
+    });
+  });
+
+  it('does not snapshot when the block is already agreed', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({
+      id: CID,
+      sessionId: SID,
+      text: 'wording',
+      status: ClauseStatus.agreed,
+    });
+    prisma.clause.update.mockResolvedValue({});
+    await service.updateClause(architect, PID, SID, CID, { rationale: 'more' });
+    expect(prisma.clauseVersion.create).not.toHaveBeenCalled();
+  });
+
+  it('saveVersion snapshots the current formulation with a note', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({
+      id: CID,
+      sessionId: SID,
+      text: 'current',
+      rationale: 'why',
+      status: ClauseStatus.in_progress,
+    });
+    prisma.clauseVersion.create.mockResolvedValue({});
+    await service.saveVersion(architect, PID, SID, CID, { note: 'checkpoint' });
+    expect(prisma.clauseVersion.create).toHaveBeenCalledWith({
+      data: {
+        clauseId: CID,
+        text: 'current',
+        rationale: 'why',
+        status: ClauseStatus.in_progress,
+        note: 'checkpoint',
+      },
+    });
+  });
+
+  it('restoreVersion snapshots the current state then applies the version', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({
+      id: CID,
+      sessionId: SID,
+      text: 'current',
+      rationale: null,
+      status: ClauseStatus.in_progress,
+    });
+    prisma.clauseVersion.findUnique.mockResolvedValue({
+      id: VID,
+      clauseId: CID,
+      text: 'old wording',
+      rationale: 'old why',
+      status: ClauseStatus.agreed,
+    });
+    prisma.clause.update.mockResolvedValue({});
+    await service.restoreVersion(architect, PID, SID, CID, VID);
+    expect(prisma.clauseVersion.create).toHaveBeenCalledWith({
+      data: {
+        clauseId: CID,
+        text: 'current',
+        rationale: null,
+        status: ClauseStatus.in_progress,
+        note: null,
+      },
+    });
+    expect(prisma.clause.update).toHaveBeenCalledWith({
+      where: { id: CID },
+      data: { text: 'old wording', rationale: 'old why', status: ClauseStatus.agreed },
+    });
+  });
+
+  it('restoreVersion rejects a version from another clause', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({
+      id: CID,
+      sessionId: SID,
+      status: ClauseStatus.in_progress,
+    });
+    prisma.clauseVersion.findUnique.mockResolvedValue({ id: VID, clauseId: 'other-clause' });
+    await expect(service.restoreVersion(architect, PID, SID, CID, VID)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(prisma.clause.update).not.toHaveBeenCalled();
   });
 });
