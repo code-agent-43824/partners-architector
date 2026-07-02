@@ -4,11 +4,11 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-07-01 — by: Watson
+**Last updated:** 2026-07-02 — by: code-writing agent (Claude)
 
 ## Current status
 
-PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host (Podman/Caddy, `https://partners-architector.duckdns.org/`). The current live release is application commit `4d4766d` with images `localhost/psa-api:4d4766d` and `localhost/psa-web:4d4766d`; `psa-db`, `psa_pgdata`, schema, seed, and server-local env were not changed during the 1.5c+1.5d deploy. Phase 1 now covers partnership CRUD, partners, sessions, the 30-block scenario engine, formulation capture/autosave, partner sign-offs, formulation version history + rollback, and the TipTap/ProseMirror rich formulation editor. Unit tests, local build checks, public health checks, and production feature smokes are green. Next: **Phase 2 — Gritz Calculator (§4.5)**. Spec `docs/spec/psa-mvp.md`; plan `docs/plans/phase-1-cases-sessions-scenario-capture.md`; ADRs 0001, 0002.
+PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host (Podman/Caddy, `https://partners-architector.duckdns.org/`). The current live release is application commit `4d4766d` with images `localhost/psa-api:4d4766d` and `localhost/psa-web:4d4766d`; `psa-db`, `psa_pgdata`, schema, seed, and server-local env were not changed during the 1.5c+1.5d deploy. Phase 1 now covers partnership CRUD, partners, sessions, the 30-block scenario engine, formulation capture/autosave, partner sign-offs, formulation version history + rollback, and the TipTap/ProseMirror rich formulation editor. Unit tests, local build checks, public health checks, and production feature smokes are green. **Development has been re-planned around a demo to Dmitry Gritz** (owner decision 2026-07-02): next is the **Demo readiness plan (D1–D5)** — session-day UX, manual shares input, agreement assembly + PDF/DOCX export, demo kit — see `docs/plans/demo-readiness.md`; the Gritz Calculator (Phase 2) and the authority matrix (Phase 3) move to **after** the demo feedback. In parallel, **Watson owns a standing ops/security backlog (W1–W6)** — backups, registration gating, password change, committed e2e suite, HTML sanitization, host health cron — see "Watson backlog" below. Spec `docs/spec/psa-mvp.md`; plans `docs/plans/demo-readiness.md`, `docs/plans/phase-1-cases-sessions-scenario-capture.md`; ADRs 0001, 0002.
 
 ### Owner decisions (2026-06-22)
 - "First stage" = **Phase 0** (skeleton). Confirmed.
@@ -19,8 +19,31 @@ PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host
 - **Partner count bounds (2026-06-24):** a partnership may have **up to 5 partners** — a hard cap enforced when adding. The **minimum of 2 is not enforced** while editing partners (a partnership may temporarily have 0–1); it is validated later, when a session is started (step 1.3). This widens the spec's FR-2.3 upper bound ("2–4") to 5 per the owner's instruction.
 - **Split step 1.5 (2026-06-25):** capture is delivered as sub-steps **1.5a–d**, each independently committed/deployed (1.5a text+rationale+autosave → 1.5b partner sign-offs → 1.5c version history+rollback → 1.5d TipTap editor). The formulation editor starts as a plain `textarea`; the TipTap/ProseMirror rich editor (spec §7.2, a new front-end dependency) is the final sub-step 1.5d.
 - **Clause version trigger (2026-06-30):** snapshot a `clause_version` before significant events — on the transition to «согласовано», on an explicit «сохранить версию» button, and before a rollback (so a restore is non-destructive). **Not** on every autosave keystroke (would create too many versions). Per the owner ("как рекомендовано").
+- **Demo-first re-plan (2026-07-02):** development is re-sequenced around a demo to Dmitry Gritz and the architects (goal: directional feedback while already delivering real value; the product must not read as a prototype). Owner's accepted hypothesis: near-term value is **routine removal + assembling the agreement**, not the calculator (shares can be computed on paper). Therefore: parts of spec Phase 4 (agreement assembly + PDF/DOCX export) are pulled forward; **Phase 2 (Gritz Calculator) and Phase 3 (matrix) move to after the demo feedback**; the shares block gets the spec's manual input mode (FR-5.1) as interim; the calculator's place is *shown* in the demo as the next milestone. Plan: `docs/plans/demo-readiness.md`. Additionally, the owner handed **Watson** the ops/security/e2e backlog (W1–W6 below) — deploy-adjacent and security work found in the 2026-07-02 CTO/PM review.
 
 ## Active task
+
+### Demo readiness — прототип для показа Грицу (planned; D1 awaiting owner go)
+- Owner: code-writing agent (Claude) — Plan committed: 2026-07-02. Full detail: `docs/plans/demo-readiness.md`.
+- Goal: show Gritz + architects a product that already removes routine and assembles the partnership agreement — directional feedback without looking like a prototype.
+- Plan (ordered, each step independently committable + deployable):
+  - [ ] D1 Session-day UX: FR-3.2 navigation (TOC with status indicators + single-block focus + prev/next + keyboard), proper modal dialogs (replace `window.confirm/prompt`), Russian specific error messages + connection-lost indicator, visual polish pass, autosave via `setQueryData` (no full-list refetch).
+  - [ ] D2 Shares block manual input (FR-5.1 manual mode + FR-5.8 «смысл долей») → `clause.structured_data`; sum=100% live check; calculator mode visible as «скоро».
+  - [ ] D3 Agreement assembly (DOC-1 minus matrix: title page + Принципы + 30 sections + shares table) as a document-styled page with print CSS («Печать/PDF» via browser).
+  - [ ] D4 Server export PDF (Playwright/Chromium) + DOCX (`docx` lib) + `export_record`; needs W5 (sanitization) first; adds heavy api-image deps — coordinate the deploy with Watson.
+  - [ ] D5 Demo kit: idempotent `db:seed:demo` (realistic filled case), 10–12 min demo script, dry run + screenshots to the owner.
+- Owner tasks: O1 proof-read the 30 block texts (seed bump) — the main «это не то» risk; O2 demo timing/audience; O3 matrix before demo? (default: after); O4 review D1 screenshots; O5 demo after D4 (recommended) or D3.
+- After the demo: feedback re-prioritizes Phase 2 (calculator) → 3 (matrix) → rest of 4 (legalization checklist) → 5 → 6 → 7–8.
+
+### Watson backlog — ops, security, e2e (handed to Watson 2026-07-02)
+Standing backlog from the owner (sourced from the 2026-07-02 CTO/PM review); work through it in parallel with the demo plan, small commits, HANDOFF discipline per item. W1 first — it protects real data.
+- [ ] **W1 Backups (NFR-3, top priority):** nightly `pg_dump` of `psa-db` on the Oracle host (e.g. cron → `/opt/partners-architector/backups`, rotate ≥14 days), a documented restore procedure in `deploy/README.md`, and **one tested restore** (into a scratch database/container — never the live one). Also check and report the disk-encryption status of the DB volume (SEC-6); no secrets committed.
+- [ ] **W2 Close registration (security):** `POST /auth/register` is currently open to the internet. Add an env-gated registration code (e.g. `AUTH_REGISTRATION_CODE`; when set, register requires it — zod field + check in `AuthService.register`), set a server-local value on Oracle, keep existing accounts working. Note: the web UI has no register form (API-only), so this is api + `.env.example` + docs.
+- [ ] **W3 Password change:** self-service `POST /auth/change-password` (current password + new, argon2, throttled) + a minimal form in the web topbar/profile; admin reset in the `accounts` module (set a temporary password). Follow the existing auth-module patterns (zod, guards, tests).
+- [ ] **W4 Committed e2e suite:** turn the per-step smoke scripts (see completed-log entries for what they covered: auth/CSRF/isolation, partnerships CRUD, partners cap+reorder, session lifecycle, scenario instantiation+status rules, capture+signoffs+versions) into a committed `tests/e2e` suite runnable as `pnpm test:e2e` against a disposable compose db (migrate + seed + run API + assert). Document in README; run it before every deploy from now on.
+- [ ] **W5 Server-side HTML sanitization (security, blocks D4):** `clause.text` stores TipTap HTML unsanitized. Sanitize on write in `ScenarioService.updateClause` with an allowlist matching StarterKit output (`p, br, strong, em, s, ul, ol, li, h1–h3, blockquote, code, pre`), e.g. via `sanitize-html`; strip everything else (attributes too). Unit-test with `<script>`/`onerror` payloads. Required before the agreement export (D4) renders this HTML into documents.
+- [ ] **W6 Host health cron (low):** every ~5 min curl the public SPA + `/api/health` + `/api/health/db` from the Oracle host, log locally (journal/file, no external services — SEC-7); on repeated failure leave a clear journal marker. Optional: restart hint in the log message.
+- Coordination: Claude works web-heavy (D1–D5); Watson stays api/infra-side (W1, W2, W4, W5, W6) — W3 touches a small web form, keep it isolated from the scenario page to avoid conflicts. Deploys of W-items follow the usual runbook (image rebuild + recreate; W2/W3/W5 are code-only, no migrations).
 
 ### Oracle Podman logging deploy note (COMPLETE)
 - Owner: Watson — started: 2026-06-27; completed: 2026-06-27
@@ -52,7 +75,7 @@ PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host
     - [x] 1.5b DONE: `PUT …/clauses/:id/signoffs/:partnerId {agreed}` upserts a `clause_signoff` (set/clear `signedAt`); clause list includes sign-offs; scenario page per-partner «согласен» checkboxes + «подтверждено всеми» badge. Owner-isolated (clause∈session, partner∈partnership). Unit tests + full-stack smoke. No schema change. (FR-4.3)
     - [x] 1.5c DONE: `clause_version` snapshot on the `agreed` transition, on explicit «save version» (`POST …/versions {note?}`), and before a restore (`POST …/versions/:id/restore`, non-destructive); `GET …/versions` history. Scenario page: per-block history toggle + «сохранить версию» + «откатить». Owner-isolated. Unit tests + full-stack smoke. No schema change. (FR-4.4)
     - [x] 1.5d DONE: TipTap/ProseMirror rich formulation editor (`@tiptap/react` + `starter-kit` + `pm`) replacing the textarea; `clause.text` is editor HTML (empty → `''`); toolbar bold/italic/list; version history/rollback round-trip the HTML. Browser-verified (login → type + bold → autosave persisted as HTML) + frozen-lockfile install & vite build verified. No migration/seed/API change. (§7.2)
-- How to resume: Phase 1 is complete and live. Start **Phase 2 — Gritz Calculator (§4.5, Appendix E)**: the share-split calculator embedded in the shares block (questions №5/№6) — two modes («Рассчитать доли» / «Ввести итоговые доли вручную»), the three-capitals method (`доля = E×WE + H×WH + S×WS`, sum = 100%), 2–4 partners, live recompute, and persistence to the `share_calculation` table + the clause's `structured_data` (both exist since 0.4). Write the Phase 2 plan doc first (`docs/plans/phase-2-…`), then go step-by-step. Reuse the scenario/clause + `assertCanAccessOwned` patterns; web via React Router + TanStack Query + the `/api` client. Bring up the dev stack per `deploy/README.md` (or `pnpm --filter @psa/api dev` + `pnpm --filter @psa/web dev` with the db in Docker/Podman).
+- How to resume: Phase 1 is complete and live. Development continues per the **demo-first re-plan** (owner decision 2026-07-02): next is step **D1** of `docs/plans/demo-readiness.md` (see the "Demo readiness" active task above); the Gritz Calculator (Phase 2) and matrix (Phase 3) come after the demo feedback. Watson works the W1–W6 ops/security backlog in parallel. Reuse the scenario/clause + `assertCanAccessOwned` patterns; web via React Router + TanStack Query + the `/api` client. Bring up the dev stack per `deploy/README.md` (or `pnpm --filter @psa/api dev` + `pnpm --filter @psa/web dev` with the db in Docker/Podman).
 
 ### Intermediate deploy — Phase 1.5c + 1.5d (version history + TipTap editor) to Oracle (COMPLETE)
 - Owner: Watson — Handoff committed: 2026-07-01; deployed: 2026-07-01
@@ -241,13 +264,15 @@ Most recent first.
 
 ## Backlog / next up
 
-Implementation follows the phased critical path in spec §11. Core = Phases 0–6; AI (7) and ASR (8) may be deferred under time pressure.
+Base order = the phased critical path in spec §11 (core = Phases 0–6; AI 7 / ASR 8 deferrable). **Re-sequenced by the demo-first re-plan (owner decision 2026-07-02, `docs/plans/demo-readiness.md`):** the agreement-assembly/export part of Phase 4 is pulled forward (steps D3/D4); Phases 2 and 3 run after the demo feedback.
 
-- **Phase 0** — Skeleton & infrastructure (active plan above).
-- **Phase 1** — Cases, sessions, scenario engine, capture (§4.2–4.4). First minimally useful product.
-- **Phase 2** — Gritz Calculator (§4.5, Appendix E).
-- **Phase 3** — Authority matrix (§4.6).
-- **Phase 4** — Assembly & legalization + export PDF/DOCX/CSV (§4.8, §10).
+- **Phase 0** — Skeleton & infrastructure — DONE, live.
+- **Phase 1** — Cases, sessions, scenario engine, capture (§4.2–4.4) — DONE, live.
+- **Demo readiness D1–D5** (active plan above) — session-day UX; manual shares input (FR-5.1); agreement assembly + print; PDF/DOCX export (part of §4.8/§10); demo kit. In parallel: **Watson backlog W1–W6** (backups, registration gating, password change, e2e suite, sanitization, health cron).
+- **Демо Грицу и архитекторам** → feedback → re-prioritize the rest.
+- **Phase 2** — Gritz Calculator (§4.5, Appendix E) — after the demo (interim: manual shares input from D2).
+- **Phase 3** — Authority matrix (§4.6) — after the demo (owner may pull it earlier, decision O3).
+- **Phase 4 (rest)** — Legalization checklist + its export CSV (§4.8 FR-8.3–8.4, §10 DOC-2).
 - **Phase 5** — Completeness checks + lifecycle/versions/diff (§4.7 FR-7.1, §4.9).
 - **Phase 6** — Client portal (§4.11).
 - **Phase 7** — AI assistant (text): inference, draft/rephrase/AI-checks, RAG, job queue (§4.10, §6).
