@@ -27,6 +27,15 @@ describe('validateEnv', () => {
     expect(validateEnv({ ...BASE, AUTH_COOKIE_SECURE: 'false' }).AUTH_COOKIE_SECURE).toBe(false);
   });
 
+  it('accepts an optional registration code and treats an empty value as unset', () => {
+    expect(
+      validateEnv({ ...BASE, AUTH_REGISTRATION_CODE: 'invite-123' }).AUTH_REGISTRATION_CODE,
+    ).toBe('invite-123');
+    expect(
+      validateEnv({ ...BASE, AUTH_REGISTRATION_CODE: '' }).AUTH_REGISTRATION_CODE,
+    ).toBeUndefined();
+  });
+
   it('throws when DATABASE_URL is missing', () => {
     expect(() => validateEnv({ AUTH_JWT_SECRET: BASE.AUTH_JWT_SECRET })).toThrow(/DATABASE_URL/);
   });

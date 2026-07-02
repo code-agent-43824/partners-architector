@@ -108,6 +108,9 @@ From the repository root, with `COMPOSE="docker compose --env-file deploy/.env -
      to start only `db` (compose interpolates the `api` service).
    - `AUTH_COOKIE_SECURE` — `true` behind TLS (production), `false` for a plain
      HTTP test deploy.
+   - Optional `AUTH_REGISTRATION_CODE` — when set, self-service
+     `POST /auth/register` requires this shared code. Set it on public
+     production hosts.
    - Optional `AUTH_ADMIN_EMAIL` / `AUTH_ADMIN_PASSWORD` to bootstrap an admin.
 2. `$COMPOSE up -d --build` — builds and starts db, api (auto-migrates), web.
 3. `$COMPOSE exec api pnpm --filter @psa/api db:seed` — load the 30 question

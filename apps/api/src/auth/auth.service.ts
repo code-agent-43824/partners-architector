@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { type Account, AccountStatus, Role } from '@prisma/client';
 
@@ -22,10 +28,16 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
     private readonly jwt: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   /** Self-service registration creates an architect account (spec FR-1.1). */
   async register(dto: RegisterDto): Promise<AuthUser> {
+    const registrationCode = this.config.get<string>('AUTH_REGISTRATION_CODE');
+    if (registrationCode && dto.registrationCode !== registrationCode) {
+      throw new ForbiddenException('Registration code is invalid');
+    }
+
     const email = dto.email.toLowerCase();
     const existing = await this.prisma.account.findUnique({ where: { email } });
     if (existing) {

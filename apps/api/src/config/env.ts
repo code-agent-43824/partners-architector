@@ -20,6 +20,11 @@ export const envSchema = z.object({
     .string()
     .optional()
     .transform((value) => value === 'true' || value === '1'),
+  // Optional shared code required by self-service registration when set.
+  AUTH_REGISTRATION_CODE: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().min(1).optional(),
+  ),
 
   // Optional initial admin, created on first boot if no admin exists.
   AUTH_ADMIN_EMAIL: z.string().email().optional(),
