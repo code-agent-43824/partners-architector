@@ -32,7 +32,7 @@ PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host
   - [ ] D3 Agreement assembly (DOC-1 minus matrix: title page + Принципы + 30 sections + shares table) as a document-styled page with print CSS («Печать/PDF» via browser).
   - [ ] D4 Server export PDF (Playwright/Chromium) + DOCX (`docx` lib) + `export_record`; needs W5 (sanitization) first; adds heavy api-image deps — coordinate the deploy with Watson.
   - [ ] D5 Demo kit: idempotent `db:seed:demo` (realistic filled case), 10–12 min demo script, dry run + screenshots to the owner.
-- Owner tasks: O1 proof-read the 30 block texts (seed bump) — the main «это не то» risk; O2 demo timing/audience; O3 matrix before demo? (default: after); O4 review D1 screenshots; O5 demo after D4 (recommended) or D3.
+- Owner tasks: O1 proof-read the 30 block texts (seed bump) — the main «это не то» risk — **delegated to Claude (2026-07-02): the owner will provide the methodology PDF as the source of truth; Claude revises the seed texts against it and bumps `QUESTION_SET_VERSION` (that deploy will need a one-time `db:seed` — the first re-seed since Phase 0; old sessions keep their old wording by design).** The PDF has not reached the environment yet — waiting for a re-attach. O2 demo timing/audience; O3 matrix before demo? (default: after); O4 review D1 screenshots; O5 demo after D4 (recommended) or D3.
 - After the demo: feedback re-prioritizes Phase 2 (calculator) → 3 (matrix) → rest of 4 (legalization checklist) → 5 → 6 → 7–8.
 
 ### Watson backlog — ops, security, e2e (handed to Watson 2026-07-02)
@@ -43,7 +43,13 @@ Standing backlog from the owner (sourced from the 2026-07-02 CTO/PM review); wor
 - [ ] **W4 Committed e2e suite:** turn the per-step smoke scripts (see completed-log entries for what they covered: auth/CSRF/isolation, partnerships CRUD, partners cap+reorder, session lifecycle, scenario instantiation+status rules, capture+signoffs+versions) into a committed `tests/e2e` suite runnable as `pnpm test:e2e` against a disposable compose db (migrate + seed + run API + assert). Document in README; run it before every deploy from now on.
 - [ ] **W5 Server-side HTML sanitization (security, blocks D4):** `clause.text` stores TipTap HTML unsanitized. Sanitize on write in `ScenarioService.updateClause` with an allowlist matching StarterKit output (`p, br, strong, em, s, ul, ol, li, h1–h3, blockquote, code, pre`), e.g. via `sanitize-html`; strip everything else (attributes too). Unit-test with `<script>`/`onerror` payloads. Required before the agreement export (D4) renders this HTML into documents.
 - [ ] **W6 Host health cron (low):** every ~5 min curl the public SPA + `/api/health` + `/api/health/db` from the Oracle host, log locally (journal/file, no external services — SEC-7); on repeated failure leave a clear journal marker. Optional: restart hint in the log message.
-- Coordination: Claude works web-heavy (D1–D5); Watson stays api/infra-side (W1, W2, W4, W5, W6) — W3 touches a small web form, keep it isolated from the scenario page to avoid conflicts. Deploys of W-items follow the usual runbook (image rebuild + recreate; W2/W3/W5 are code-only, no migrations).
+- Coordination (D↔W sync points; otherwise the two plans run independently in parallel):
+  - **Hard: W5 before D4.** The agreement export (D4) renders clause HTML into PDF/DOCX — sanitization must be live first. Everything else in D1–D5 does not depend on W-items.
+  - **Soft: W3 UI after D1.** D1 rebuilds the topbar/навигацию; Watson should ship W3 API-first and add the small password form only after D1 lands (or as a separate `/profile` route).
+  - **W2 side effect:** once the registration code is live, any smoke/e2e that registers accounts must pass `AUTH_REGISTRATION_CODE` (W4's suite reads it from env). The demo seed (D5) writes via Prisma, not the register API — unaffected.
+  - **Operational:** one prod environment — deploys serialize through Watson regardless of which plan an item came from. Both agents commit to `main`: pull/rebase before push; HANDOFF is the hot file — keep edits small and section-scoped.
+  - Recommended Watson order: **W1 → W2 → W5 → W4 → W3 (after D1) → W6**; W5 ideally done while Claude is on D2/D3 so D4 is never blocked.
+  - Deploys of W-items follow the usual runbook (image rebuild + recreate; W2/W3/W5 are code-only, no migrations).
 
 ### Oracle Podman logging deploy note (COMPLETE)
 - Owner: Watson — started: 2026-06-27; completed: 2026-06-27
