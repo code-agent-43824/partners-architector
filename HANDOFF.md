@@ -4,7 +4,7 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-07-03 — by: Watson
+**Last updated:** 2026-07-03 — by: Claude
 
 ## Current status
 
@@ -23,11 +23,11 @@ PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host
 
 ## Active task
 
-### Demo readiness — прототип для показа Грицу (planned; D1 awaiting owner go)
+### Demo readiness — прототип для показа Грицу (D1 IN PROGRESS — Claude, since 2026-07-03)
 - Owner: code-writing agent (Claude) — Plan committed: 2026-07-02. Full detail: `docs/plans/demo-readiness.md`.
 - Goal: show Gritz + architects a product that already removes routine and assembles the partnership agreement — directional feedback without looking like a prototype.
 - Plan (ordered, each step independently committable + deployable):
-  - [ ] D1 Session-day UX: FR-3.2 navigation (TOC with status indicators + single-block focus + prev/next + keyboard), proper modal dialogs (replace `window.confirm/prompt`), Russian specific error messages + connection-lost indicator, visual polish pass, autosave via `setQueryData` (no full-list refetch).
+  - [~] **D1 Session-day UX — IN PROGRESS (Claude, 2026-07-03).** FR-3.2 navigation (TOC with status indicators + single-block focus + prev/next + keyboard), proper modal dialogs (replace `window.confirm/prompt`), Russian specific error messages + connection-lost indicator, visual polish pass, autosave via `setQueryData` (no full-list refetch). **Web-only** (`apps/web`) — no API/schema/seed/deps change. Scope decisions: (a) focus mode mounts **one** `ClauseCard` at a time (keyed by id) instead of the endless 30-editor scroll, flushing a pending autosave on unmount so switching blocks never drops an edit; (b) new `Modal`/`ConfirmDialog` components; a single reason-modal replaces the two-step `confirm+prompt` for «неактуально»; (c) a global `ConnectionBanner` is mounted **additively** in `AppLayout` above `<main>` — **the topbar (incl. Watson's `/profile` link, W3) is left untouched** so this does not collide with W3's UI when it resumes; (d) new `apps/web/src/api/errors.ts` maps `ApiError`→specific ru messages; (e) `clauseHooks` switch update/signoff/restore from `invalidateQueries` to `setQueryData`. Unblocks Watson's paused W3 (topbar/profile) once landed.
   - [ ] D2 Shares block manual input (FR-5.1 manual mode + FR-5.8 «смысл долей») → `clause.structured_data`; sum=100% live check; calculator mode visible as «скоро».
   - [ ] D3 Agreement assembly (DOC-1 minus matrix: title page + Принципы + 30 sections + shares table) as a document-styled page with print CSS («Печать/PDF» via browser).
   - [ ] D4 Server export PDF (Playwright/Chromium) + DOCX (`docx` lib) + `export_record`; needs W5 (sanitization) first; adds heavy api-image deps — coordinate the deploy with Watson.
