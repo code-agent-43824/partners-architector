@@ -4,7 +4,7 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-07-03 — by: Watson
+**Last updated:** 2026-07-03 — by: Claude
 
 ## Current status
 
@@ -23,12 +23,12 @@ PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host
 
 ## Active task
 
-### Demo readiness — прототип для показа Грицу (D1 COMPLETE; D2 next)
+### Demo readiness — прототип для показа Грицу (D2 IN PROGRESS — Claude, since 2026-07-03)
 - Owner: code-writing agent (Claude) — Plan committed: 2026-07-02. Full detail: `docs/plans/demo-readiness.md`.
 - Goal: show Gritz + architects a product that already removes routine and assembles the partnership agreement — directional feedback without looking like a prototype.
 - Plan (ordered, each step independently committable + deployable):
   - [x] **D1 Session-day UX — DONE and live (Claude + Watson, 2026-07-03).** FR-3.2 navigation (TOC with status indicators + single-block focus + prev/next + keyboard), proper modal dialogs (replaced `window.confirm/prompt`), Russian specific error messages + connection-lost indicator, visual polish pass, autosave via `setQueryData` (no full-list refetch). **Web-only** (`apps/web`) — no API/schema/seed/deps change. What shipped: (a) focus mode mounts **one** `ClauseCard` at a time (keyed by id) instead of the endless 30-editor scroll, flushing a pending autosave on unmount so switching blocks never drops an edit (`useFlushClause`); (b) new `Modal`/`ConfirmDialog` components (portal, Esc/backdrop close, focus) — a single reason-modal replaces the two-step `confirm+prompt` for «неактуально», a confirm dialog replaces the rollback `confirm`; (c) a global `ConnectionBanner` is mounted **additively** in `AppLayout` above `<main>` — **the topbar (incl. Watson's `/profile` link, W3) is left untouched**; (d) new `apps/web/src/api/errors.ts` maps `ApiError` + network `TypeError`→specific ru messages; per-block save state now shows a real error + «Повторить» instead of failing silently; (e) `clauseHooks` switched update/signoff/restore from `invalidateQueries` to `setQueryData`; (f) CSS: two-pane TOC/focus layout, status dots, dialogs, banner, wider shell (`.content` 760→1040px), responsive stacking <720px. Verified by Claude: `typecheck`/`lint`/`format:check`/`build`/`test` (110 pass) all green, plus a real-browser smoke. Deployed by Watson with W3 as release `e12a084`; public SPA/API/DB health checks are green.
-  - [ ] D2 Shares block manual input (FR-5.1 manual mode + FR-5.8 «смысл долей») → `clause.structured_data`; sum=100% live check; calculator mode visible as «скоро».
+  - [~] **D2 Shares block manual input — IN PROGRESS (Claude, 2026-07-03).** FR-5.1 manual mode + FR-5.7 (final shares → `clause.structured_data`) + FR-5.8 (block №6 «смысл долей»). Block **№5** (доли): a manual shares table — one % per partner with a **live sum=100% check** (client-side only; the server stores any intermediate state so autosave never blocks), plus a mode switch showing «Рассчитать доли (Калькулятор Грица)» **disabled** with a «скоро» badge (FR-5.1/5.2 — the calculator is Phase 2; its place is *shown* for the demo). Block **№6** (смысл долей): four flags — голосование / прибыль / владение / убытки. Both persist in the existing `structured_data` JSON, namespaced `{ shares }` / `{ meaning }`; the free-text formulation still works. **API change (no migration, column exists since 0.4):** `updateClauseSchema` + `ScenarioService.updateClause` gain an optional zod-validated `structuredData`; clause reads already return the column. Web: new `SharesEditor`/`MeaningEditor` gated on `question.number` 5/6, ClauseCard autosave + flush-on-unmount extended to `structured_data` (now sends only changed fields). **Deploy needs BOTH `psa-api` + `psa-web`.** No seed. Gates D3 (agreement shares table reads this).
   - [ ] D3 Agreement assembly (DOC-1 minus matrix: title page + Принципы + 30 sections + shares table) as a document-styled page with print CSS («Печать/PDF» via browser).
   - [ ] D4 Server export PDF (Playwright/Chromium) + DOCX (`docx` lib) + `export_record`; needs W5 (sanitization) first; adds heavy api-image deps — coordinate the deploy with Watson.
   - [ ] D5 Demo kit: idempotent `db:seed:demo` (realistic filled case), 10–12 min demo script, dry run + screenshots to the owner.
