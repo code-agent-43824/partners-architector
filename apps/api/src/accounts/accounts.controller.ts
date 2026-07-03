@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Roles } from '../auth/roles.decorator';
 import { ZodBody } from '../common/zod-validation.pipe';
 import { AccountsService } from './accounts.service';
+import { type ResetPasswordDto, resetPasswordSchema } from './dto';
 
 const statusSchema = z.object({ status: z.nativeEnum(AccountStatus) });
 type StatusDto = z.infer<typeof statusSchema>;
@@ -23,5 +24,13 @@ export class AccountsController {
   @Patch(':id/status')
   setStatus(@Param('id') id: string, @Body(new ZodBody(statusSchema)) dto: StatusDto) {
     return this.accounts.setStatus(id, dto.status);
+  }
+
+  @Patch(':id/password')
+  resetPassword(
+    @Param('id') id: string,
+    @Body(new ZodBody(resetPasswordSchema)) dto: ResetPasswordDto,
+  ) {
+    return this.accounts.resetPassword(id, dto.password);
   }
 }

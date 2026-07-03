@@ -9,7 +9,14 @@ import { AuthService } from './auth.service';
 import type { AuthUser } from './auth.types';
 import { COOKIE_MAX_AGE_MS, CSRF_COOKIE, SESSION_COOKIE } from './cookies';
 import { CurrentUser } from './current-user.decorator';
-import { type LoginDto, loginSchema, type RegisterDto, registerSchema } from './dto';
+import {
+  type ChangePasswordDto,
+  changePasswordSchema,
+  type LoginDto,
+  loginSchema,
+  type RegisterDto,
+  registerSchema,
+} from './dto';
 import { Public } from './public.decorator';
 
 /** Minimal cookie surface we rely on (avoids a hard express type dependency). */
@@ -59,6 +66,16 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser): AuthUser {
     return user;
+  }
+
+  @Throttle(AUTH_THROTTLE)
+  @Post('change-password')
+  @HttpCode(204)
+  async changePassword(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodBody(changePasswordSchema)) dto: ChangePasswordDto,
+  ): Promise<void> {
+    await this.auth.changePassword(user, dto);
   }
 
   private get secure(): boolean {

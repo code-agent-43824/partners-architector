@@ -11,6 +11,7 @@ function makePrisma() {
     account: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
   };
 }
@@ -136,5 +137,44 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
 
     expect(prisma.account.create).not.toHaveBeenCalled();
+  });
+
+  it('changes the password after verifying the current password', async () => {
+    prisma.account.findUnique.mockResolvedValue({
+      id: 'acc-1',
+      passwordHash: 'old-hash',
+    });
+    passwords.verify.mockResolvedValue(true);
+    passwords.hash.mockResolvedValue('new-hash');
+    prisma.account.update.mockResolvedValue({ id: 'acc-1' });
+
+    await service().changePassword(
+      { id: 'acc-1', email: 'user@example.com', role: Role.architect, displayName: null },
+      { currentPassword: 'old-password', newPassword: 'new-password' },
+    );
+
+    expect(passwords.verify).toHaveBeenCalledWith('old-hash', 'old-password');
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      where: { id: 'acc-1' },
+      data: { passwordHash: 'new-hash' },
+    });
+  });
+
+  it('rejects password change when the current password is wrong', async () => {
+    prisma.account.findUnique.mockResolvedValue({
+      id: 'acc-1',
+      passwordHash: 'old-hash',
+    });
+    passwords.verify.mockResolvedValue(false);
+
+    await expect(
+      service().changePassword(
+        { id: 'acc-1', email: 'user@example.com', role: Role.architect, displayName: null },
+        { currentPassword: 'wrong-password', newPassword: 'new-password' },
+      ),
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(passwords.hash).not.toHaveBeenCalled();
+    expect(prisma.account.update).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 
 import { useLogout, useMe } from '../auth/useAuth';
 import { t } from '../i18n';
@@ -14,6 +14,9 @@ export function AppLayout() {
         <strong>{t('appName')}</strong>
         <span className="spacer" />
         {user ? <span className="muted">{user.email}</span> : null}
+        <Link className="link" to="/profile">
+          {t('nav.profile')}
+        </Link>
         <button
           type="button"
           onClick={() =>

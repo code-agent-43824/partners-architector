@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { type AuthUser, fetchMe, login, logout } from '../api/auth';
+import { type AuthUser, changePassword, fetchMe, login, logout } from '../api/auth';
 
 const ME_KEY = ['me'] as const;
 
@@ -21,5 +21,12 @@ export function useLogout() {
   return useMutation({
     mutationFn: logout,
     onSuccess: () => queryClient.removeQueries({ queryKey: ME_KEY }),
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (vars: { currentPassword: string; newPassword: string }) =>
+      changePassword(vars.currentPassword, vars.newPassword),
   });
 }

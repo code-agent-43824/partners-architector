@@ -10,7 +10,7 @@ import { type Account, AccountStatus, Role } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from './auth.types';
-import type { RegisterDto } from './dto';
+import type { ChangePasswordDto, RegisterDto } from './dto';
 import { PasswordService } from './password.service';
 
 function toAuthUser(account: Account): AuthUser {
@@ -75,5 +75,21 @@ export class AuthService {
   /** Signs the session JWT for an authenticated user. */
   issueToken(user: AuthUser): string {
     return this.jwt.sign({ sub: user.id, role: user.role });
+  }
+
+  /** Changes the current user's password after verifying the old password. */
+  async changePassword(user: AuthUser, dto: ChangePasswordDto): Promise<void> {
+    const account = await this.prisma.account.findUnique({ where: { id: user.id } });
+    if (!account) {
+      throw new UnauthorizedException('Account unavailable');
+    }
+    const valid = await this.passwords.verify(account.passwordHash, dto.currentPassword);
+    if (!valid) {
+      throw new UnauthorizedException('Invalid current password');
+    }
+    await this.prisma.account.update({
+      where: { id: user.id },
+      data: { passwordHash: await this.passwords.hash(dto.newPassword) },
+    });
   }
 }

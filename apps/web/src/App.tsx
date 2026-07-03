@@ -5,6 +5,7 @@ import { AppLayout } from './components/AppLayout';
 import { LoginPage } from './pages/LoginPage';
 import { PartnershipDetailPage } from './pages/PartnershipDetailPage';
 import { PartnershipsPage } from './pages/PartnershipsPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { ScenarioPage } from './pages/ScenarioPage';
 
 export function App() {
@@ -19,6 +20,7 @@ export function App() {
         }
       >
         <Route path="/" element={<PartnershipsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/partnerships/:id" element={<PartnershipDetailPage />} />
         <Route path="/partnerships/:partnershipId/sessions/:sessionId" element={<ScenarioPage />} />
       </Route>

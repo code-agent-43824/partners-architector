@@ -20,3 +20,10 @@ export function logout(): Promise<void> {
 export function fetchMe(): Promise<AuthUser> {
   return apiFetch<AuthUser>('/auth/me');
 }
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return apiFetch<void>('/auth/change-password', {
+    method: 'POST',
+    body: { currentPassword, newPassword },
+  });
+}
