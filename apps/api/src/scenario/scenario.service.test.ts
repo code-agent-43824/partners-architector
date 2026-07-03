@@ -89,10 +89,12 @@ describe('ScenarioService', () => {
     prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: 'agreed wording' });
     prisma.clause.update.mockResolvedValue({ id: CID, status: ClauseStatus.agreed });
     await service.updateClause(architect, PID, SID, CID, { status: ClauseStatus.agreed });
-    expect(prisma.clause.update).toHaveBeenCalledWith({
-      where: { id: CID },
-      data: { status: ClauseStatus.agreed, naReason: null },
-    });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { status: ClauseStatus.agreed, naReason: null },
+      }),
+    );
   });
 
   it('keeps the reason only while "not applicable"', async () => {
@@ -104,17 +106,21 @@ describe('ScenarioService', () => {
       status: ClauseStatus.not_applicable,
       naReason: 'не наш случай',
     });
-    expect(prisma.clause.update).toHaveBeenCalledWith({
-      where: { id: CID },
-      data: { status: ClauseStatus.not_applicable, naReason: 'не наш случай' },
-    });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { status: ClauseStatus.not_applicable, naReason: 'не наш случай' },
+      }),
+    );
 
     prisma.clause.update.mockClear();
     await service.updateClause(architect, PID, SID, CID, { status: ClauseStatus.parked });
-    expect(prisma.clause.update).toHaveBeenCalledWith({
-      where: { id: CID },
-      data: { status: ClauseStatus.parked, naReason: null },
-    });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { status: ClauseStatus.parked, naReason: null },
+      }),
+    );
   });
 
   it('saves formulation text and rationale', async () => {
@@ -125,10 +131,29 @@ describe('ScenarioService', () => {
       text: 'agreed wording',
       rationale: 'why',
     });
-    expect(prisma.clause.update).toHaveBeenCalledWith({
-      where: { id: CID },
-      data: { text: 'agreed wording', rationale: 'why' },
-    });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { text: 'agreed wording', rationale: 'why' },
+      }),
+    );
+  });
+
+  it('persists structured shares data (FR-5.7) and returns clause relations', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });
+    prisma.clause.update.mockResolvedValue({});
+    const structuredData = {
+      shares: { mode: 'manual' as const, allocations: [{ partnerId: PARTNER, percent: 60 }] },
+    };
+    await service.updateClause(architect, PID, SID, CID, { structuredData });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { structuredData },
+        include: expect.objectContaining({ signoffs: true }),
+      }),
+    );
   });
 
   it('allows "agreed" when text is provided in the same request', async () => {
@@ -139,10 +164,12 @@ describe('ScenarioService', () => {
       status: ClauseStatus.agreed,
       text: 'wording',
     });
-    expect(prisma.clause.update).toHaveBeenCalledWith({
-      where: { id: CID },
-      data: { text: 'wording', status: ClauseStatus.agreed, naReason: null },
-    });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { text: 'wording', status: ClauseStatus.agreed, naReason: null },
+      }),
+    );
   });
 
   function grantSignoffAccess() {
@@ -283,10 +310,12 @@ describe('ScenarioService', () => {
         note: null,
       },
     });
-    expect(prisma.clause.update).toHaveBeenCalledWith({
-      where: { id: CID },
-      data: { text: 'old wording', rationale: 'old why', status: ClauseStatus.agreed },
-    });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { text: 'old wording', rationale: 'old why', status: ClauseStatus.agreed },
+      }),
+    );
   });
 
   it('restoreVersion rejects a version from another clause', async () => {

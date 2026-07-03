@@ -26,7 +26,12 @@ const versionsKey = (partnershipId: string, sessionId: string, clauseId: string)
   clauseId,
 ];
 
-/** Replace a single clause in the cached list without refetching all 30. */
+/**
+ * Merge a mutation's clause result into the cached list without refetching all
+ * 30. The API returns the full clause shape (question + signoffs), but we merge
+ * rather than replace so a response that ever omits a relation can't blank the
+ * scenario screen (`clause.question` must always be present to render).
+ */
 function replaceClause(
   qc: ReturnType<typeof useQueryClient>,
   partnershipId: string,
@@ -34,7 +39,7 @@ function replaceClause(
   updated: Clause,
 ) {
   qc.setQueryData<Clause[]>(clausesKey(partnershipId, sessionId), (old) =>
-    old ? old.map((c) => (c.id === updated.id ? updated : c)) : old,
+    old ? old.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)) : old,
   );
 }
 
@@ -67,7 +72,7 @@ export function useUpdateClause(partnershipId: string, sessionId: string) {
 export function useFlushClause(partnershipId: string, sessionId: string) {
   const qc = useQueryClient();
   return useCallback(
-    (clauseId: string, body: { text: string; rationale: string }) => {
+    (clauseId: string, body: UpdateClauseInput) => {
       updateClause(partnershipId, sessionId, clauseId, body)
         .then((updated) => replaceClause(qc, partnershipId, sessionId, updated))
         .catch(() => {

@@ -43,3 +43,61 @@ describe('clause update DTO', () => {
     expect(saveVersionSchema.safeParse({ note: 'checkpoint' }).success).toBe(true);
   });
 });
+
+describe('clause structured_data (shares / meaning)', () => {
+  const partnerId = '11111111-1111-1111-1111-111111111111';
+
+  it('accepts a manual shares payload', () => {
+    expect(
+      updateClauseSchema.safeParse({
+        structuredData: {
+          shares: { mode: 'manual', allocations: [{ partnerId, percent: 50 }] },
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('does not enforce sum = 100 (intermediate totals are allowed)', () => {
+    expect(
+      updateClauseSchema.safeParse({
+        structuredData: {
+          shares: { mode: 'manual', allocations: [{ partnerId, percent: 40 }] },
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts the four meaning-of-shares flags', () => {
+    expect(
+      updateClauseSchema.safeParse({
+        structuredData: {
+          meaning: { voting: true, profit: true, ownership: false, losses: false },
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects an out-of-range percent, a bad partner id, and unknown keys', () => {
+    expect(
+      updateClauseSchema.safeParse({
+        structuredData: { shares: { mode: 'manual', allocations: [{ partnerId, percent: 120 }] } },
+      }).success,
+    ).toBe(false);
+    expect(
+      updateClauseSchema.safeParse({
+        structuredData: {
+          shares: { mode: 'manual', allocations: [{ partnerId: 'x', percent: 10 }] },
+        },
+      }).success,
+    ).toBe(false);
+    expect(updateClauseSchema.safeParse({ structuredData: { bogus: true } }).success).toBe(false);
+  });
+
+  it('rejects a non-manual mode (calculator is not built yet)', () => {
+    expect(
+      updateClauseSchema.safeParse({
+        structuredData: { shares: { mode: 'calculator', allocations: [] } },
+      }).success,
+    ).toBe(false);
+  });
+});

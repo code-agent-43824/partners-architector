@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router-dom';
 
 import { apiErrorMessage } from '../api/errors';
 import type { Partner } from '../api/partners';
-import type { Clause, ClauseStatus } from '../api/scenario';
+import type { Clause, ClauseStatus, StructuredData, UpdateClauseInput } from '../api/scenario';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { MeaningEditor } from '../components/MeaningEditor';
 import { Modal } from '../components/Modal';
 import { RichTextEditor } from '../components/RichTextEditor';
+import { SharesEditor } from '../components/SharesEditor';
 import { t, type TranslationKey } from '../i18n';
 import {
   useClauses,
@@ -38,6 +40,35 @@ const statusLabelKey: Record<ClauseStatus, TranslationKey> = {
 };
 
 const OPEN_HEAVY_EXCLUDED: ClauseStatus[] = ['agreed', 'not_applicable'];
+
+// Methodology blocks with structured capture (spec §4.5): №5 final shares
+// (FR-5.7), №6 «смысл долей» flags (FR-5.8).
+const SHARES_BLOCK = 5;
+const MEANING_BLOCK = 6;
+
+interface SavedSnapshot {
+  text: string;
+  rationale: string;
+  structured: string;
+}
+
+/** A PATCH body of only the capture fields that changed since the last save. */
+function changedBody(
+  saved: SavedSnapshot,
+  next: { text: string; rationale: string; structuredData: StructuredData },
+): UpdateClauseInput | null {
+  const body: UpdateClauseInput = {};
+  if (next.text !== saved.text) {
+    body.text = next.text;
+  }
+  if (next.rationale !== saved.rationale) {
+    body.rationale = next.rationale;
+  }
+  if (JSON.stringify(next.structuredData) !== saved.structured) {
+    body.structuredData = next.structuredData;
+  }
+  return Object.keys(body).length > 0 ? body : null;
+}
 
 /** Plain-text preview of a stored formulation (which may be TipTap HTML). */
 function previewText(html: string): string {
@@ -240,41 +271,45 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
   const restoreVersion = useRestoreVersion(partnershipId, sessionId);
   const [text, setText] = useState(clause.text ?? '');
   const [rationale, setRationale] = useState(clause.rationale ?? '');
+  const [structuredData, setStructuredData] = useState<StructuredData>(clause.structuredData ?? {});
   const [saved, setSaved] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [naReason, setNaReason] = useState(clause.naReason ?? '');
-  const savedRef = useRef({ text: clause.text ?? '', rationale: clause.rationale ?? '' });
-  const latestRef = useRef({ text, rationale });
-  latestRef.current = { text, rationale };
+  const savedRef = useRef({
+    text: clause.text ?? '',
+    rationale: clause.rationale ?? '',
+    structured: JSON.stringify(clause.structuredData ?? {}),
+  });
+  const latestRef = useRef({ text, rationale, structuredData });
+  latestRef.current = { text, rationale, structuredData };
 
-  // FR-4.1: autosave the formulation + rationale with a short debounce (≤ 2s).
+  // FR-4.1/5.7: autosave changed capture fields with a short debounce (≤ 2s).
   useEffect(() => {
-    if (text === savedRef.current.text && rationale === savedRef.current.rationale) {
+    const body = changedBody(savedRef.current, { text, rationale, structuredData });
+    if (!body) {
       return;
     }
     const handle = setTimeout(() => {
       update.mutate(
-        { clauseId: clause.id, body: { text, rationale } },
+        { clauseId: clause.id, body },
         {
           onSuccess: () => {
-            savedRef.current = { text, rationale };
+            savedRef.current = { text, rationale, structured: JSON.stringify(structuredData) };
             setSaved(true);
           },
         },
       );
     }, 1000);
     return () => clearTimeout(handle);
-  }, [text, rationale, clause.id, update.mutate]);
+  }, [text, rationale, structuredData, clause.id, update.mutate]);
 
   // Flush any pending edit when the focused block unmounts (block switch).
   useEffect(() => {
     return () => {
       const latest = latestRef.current;
-      if (
-        latest.text !== savedRef.current.text ||
-        latest.rationale !== savedRef.current.rationale
-      ) {
-        flush(clause.id, latest);
+      const body = changedBody(savedRef.current, latest);
+      if (body) {
+        flush(clause.id, body);
       }
     };
   }, [flush, clause.id]);
@@ -324,7 +359,11 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
         onSuccess: (updated) => {
           setText(updated.text ?? '');
           setRationale(updated.rationale ?? '');
-          savedRef.current = { text: updated.text ?? '', rationale: updated.rationale ?? '' };
+          savedRef.current = {
+            text: updated.text ?? '',
+            rationale: updated.rationale ?? '',
+            structured: savedRef.current.structured,
+          };
           setSaved(false);
           setDialog(null);
         },
@@ -379,6 +418,26 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
           rows={2}
         />
       </label>
+
+      {clause.question.number === SHARES_BLOCK ? (
+        <SharesEditor
+          partners={partners}
+          value={structuredData.shares}
+          onChange={(shares) => {
+            setSaved(false);
+            setStructuredData((prev) => ({ ...prev, shares }));
+          }}
+        />
+      ) : null}
+      {clause.question.number === MEANING_BLOCK ? (
+        <MeaningEditor
+          value={structuredData.meaning}
+          onChange={(meaning) => {
+            setSaved(false);
+            setStructuredData((prev) => ({ ...prev, meaning }));
+          }}
+        />
+      ) : null}
 
       {partners.length > 0 ? (
         <div className="signoffs">

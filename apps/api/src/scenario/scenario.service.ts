@@ -1,5 +1,11 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Clause, type ClauseSignoff, ClauseStatus, type ClauseVersion } from '@prisma/client';
+import {
+  type Clause,
+  type ClauseSignoff,
+  ClauseStatus,
+  type ClauseVersion,
+  type Prisma,
+} from '@prisma/client';
 
 import type { AuthUser } from '../auth/auth.types';
 import { assertCanAccessOwned } from '../common/ownership';
@@ -18,6 +24,13 @@ const questionSelect = {
 } as const;
 
 /**
+ * The relations the web needs on every clause it renders. Reads *and* writes
+ * return this shape so the client can trust a mutation response as a drop-in
+ * cache replacement (it renders `clause.question`/`clause.signoffs` directly).
+ */
+const clauseInclude = { question: { select: questionSelect }, signoffs: true } as const;
+
+/**
  * The scenario walk: read the instantiated blocks (clauses) of a session and
  * drive their statuses (FR-3.2–3.6). Clauses are scoped through their session's
  * partnership owner (SEC-5). Instantiation of the 30 blocks happens on session
@@ -32,7 +45,7 @@ export class ScenarioService {
     return this.prisma.clause.findMany({
       where: { sessionId },
       orderBy: { question: { orderIndex: 'asc' } },
-      include: { question: { select: questionSelect }, signoffs: true },
+      include: clauseInclude,
     });
   }
 
@@ -101,6 +114,10 @@ export class ScenarioService {
       // `manual` (default) until AI drafting arrives in Phase 7.
       ...(dto.text !== undefined ? { text: dto.text } : {}),
       ...(dto.rationale !== undefined ? { rationale: dto.rationale } : {}),
+      // FR-5.7/5.8: structured shares (block №5) / meaning of shares (block №6).
+      ...(dto.structuredData !== undefined
+        ? { structuredData: dto.structuredData as Prisma.InputJsonValue }
+        : {}),
       ...statusData,
     };
 
@@ -109,10 +126,14 @@ export class ScenarioService {
     const becameAgreed =
       dto.status === ClauseStatus.agreed && clause.status !== ClauseStatus.agreed;
     if (!becameAgreed) {
-      return this.prisma.clause.update({ where: { id: clauseId }, data });
+      return this.prisma.clause.update({ where: { id: clauseId }, data, include: clauseInclude });
     }
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.clause.update({ where: { id: clauseId }, data });
+      const updated = await tx.clause.update({
+        where: { id: clauseId },
+        data,
+        include: clauseInclude,
+      });
       await tx.clauseVersion.create({ data: this.versionData(updated, null) });
       return updated;
     });
@@ -167,6 +188,7 @@ export class ScenarioService {
       return tx.clause.update({
         where: { id: clauseId },
         data: { text: version.text, rationale: version.rationale, status: version.status },
+        include: clauseInclude,
       });
     });
   }

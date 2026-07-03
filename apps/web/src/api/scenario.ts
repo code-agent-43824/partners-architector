@@ -26,6 +26,30 @@ export interface ClauseSignoff {
   signedAt: string | null;
 }
 
+/** Manual final shares of the доли block (№5), stored in `structured_data`. */
+export interface ShareAllocation {
+  partnerId: string;
+  percent: number;
+}
+
+export interface SharesData {
+  mode: 'manual';
+  allocations: ShareAllocation[];
+}
+
+/** «Смысл долей» flags of block №6 (FR-5.8). */
+export interface MeaningData {
+  voting: boolean;
+  profit: boolean;
+  ownership: boolean;
+  losses: boolean;
+}
+
+export interface StructuredData {
+  shares?: SharesData;
+  meaning?: MeaningData;
+}
+
 export interface Clause {
   id: string;
   sessionId: string;
@@ -35,6 +59,7 @@ export interface Clause {
   rationale: string | null;
   naReason: string | null;
   source: string;
+  structuredData: StructuredData | null;
   createdAt: string;
   updatedAt: string;
   question: ClauseQuestion;
@@ -56,6 +81,7 @@ export interface UpdateClauseInput {
   naReason?: string;
   text?: string | null;
   rationale?: string | null;
+  structuredData?: StructuredData;
 }
 
 export function listClauses(partnershipId: string, sessionId: string): Promise<Clause[]> {
