@@ -12,7 +12,9 @@
   content caveat). This plan **re-sequences** spec §11: parts of Phase 4
   (assembly/export of the agreement) are pulled forward; Phase 2 (calculator)
   and Phase 3 (matrix) move to after the demo feedback.
-- **Status:** planned; D1 awaiting owner go-ahead.
+- **Status:** in progress. **D1 done** (code-complete + browser-verified,
+  2026-07-03, commit `6f28972`; awaiting a web-only `psa-web` deploy by Watson).
+  D2–D5 planned; D2 is next.
 
 ## 1. Rationale (why this order)
 
