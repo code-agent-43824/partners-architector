@@ -1,13 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { apiErrorMessage } from '../api/errors';
 import type { Partner } from '../api/partners';
 import type { Clause, ClauseStatus } from '../api/scenario';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Modal } from '../components/Modal';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { t, type TranslationKey } from '../i18n';
 import {
   useClauses,
   useClauseVersions,
+  useFlushClause,
   useRestoreVersion,
   useSaveVersion,
   useSetSignoff,
@@ -48,15 +52,68 @@ export function ScenarioPage() {
   const { partnershipId = '', sessionId = '' } = useParams();
   const query = useClauses(partnershipId, sessionId);
   const partnersQuery = usePartners(partnershipId);
+  const clauses = query.data;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Resolve the focused block (default: the first) from the loaded list.
+  const selectedIndex = useMemo(() => {
+    if (!clauses || clauses.length === 0) {
+      return 0;
+    }
+    const i = clauses.findIndex((c) => c.id === selectedId);
+    return i >= 0 ? i : 0;
+  }, [clauses, selectedId]);
+
+  // FR-3.2: linear forward/back navigation between blocks.
+  const go = useCallback(
+    (delta: number) => {
+      if (!clauses || clauses.length === 0) {
+        return;
+      }
+      const next = Math.min(Math.max(selectedIndex + delta, 0), clauses.length - 1);
+      const target = clauses[next];
+      if (target) {
+        setSelectedId(target.id);
+      }
+    },
+    [clauses, selectedIndex],
+  );
+
+  // Keyboard navigation — only when not typing and no dialog is open.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (document.querySelector('.modal-overlay')) {
+        return;
+      }
+      const el = event.target as HTMLElement | null;
+      if (
+        el &&
+        (el.isContentEditable ||
+          el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT')
+      ) {
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        go(-1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        go(1);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [go]);
 
   if (query.isLoading) {
     return <p className="muted">{t('common.loading')}</p>;
   }
-  if (query.isError || !query.data) {
+  if (query.isError || !clauses) {
     return <p className="error">{t('common.error')}</p>;
   }
 
-  const clauses = query.data;
   const partners = partnersQuery.data ?? [];
   const total = clauses.length;
   const agreed = clauses.filter((c) => c.status === 'agreed').length;
@@ -67,28 +124,99 @@ export function ScenarioPage() {
     (c) => c.status === 'disputed' || c.status === 'parked',
   ).length;
 
+  // Table of contents grouped by contour (category), preserving block order.
+  const groups: { category: string; items: Clause[] }[] = [];
+  for (const clause of clauses) {
+    const category = clause.question.category;
+    let group = groups.find((g) => g.category === category);
+    if (!group) {
+      group = { category, items: [] };
+      groups.push(group);
+    }
+    group.items.push(clause);
+  }
+
+  const selected = clauses[selectedIndex];
+
   return (
     <>
       <Link className="link" to={`/partnerships/${partnershipId}`}>
         {t('scenario.back')}
       </Link>
       <h1>{t('scenario.title')}</h1>
-      <p className="muted">
+      <p className="muted progress">
         {t('scenario.agreedOf')}: {agreed} / {total} · {t('scenario.heavyOpen')}: {heavyOpen} ·{' '}
         {t('scenario.disputedParked')}: {disputedParked}
       </p>
 
-      <ul className="list">
-        {clauses.map((clause) => (
-          <ClauseCard
-            key={clause.id}
-            partnershipId={partnershipId}
-            sessionId={sessionId}
-            clause={clause}
-            partners={partners}
-          />
-        ))}
-      </ul>
+      {selected ? (
+        <div className="scenario">
+          <nav className="toc" aria-label={t('scenario.tocTitle')}>
+            {groups.map((group) => (
+              <div key={group.category} className="toc-group">
+                <p className="toc-group-title">{group.category}</p>
+                {group.items.map((clause) => (
+                  <button
+                    key={clause.id}
+                    type="button"
+                    className={`toc-item${clause.id === selected.id ? ' active' : ''}`}
+                    aria-current={clause.id === selected.id ? 'true' : undefined}
+                    onClick={() => setSelectedId(clause.id)}
+                  >
+                    <span
+                      className={`dot dot-${clause.status}`}
+                      title={t(statusLabelKey[clause.status])}
+                    />
+                    <span className="toc-num">{clause.question.number}</span>
+                    <span className="toc-item-title">{clause.question.title}</span>
+                    {clause.question.isSensitive ? (
+                      <span className="toc-heavy" title={t('scenario.heavyBadge')}>
+                        ⬤
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </nav>
+
+          <div className="focus">
+            <div className="focus-nav">
+              <button
+                type="button"
+                className="link"
+                disabled={selectedIndex === 0}
+                onClick={() => go(-1)}
+              >
+                {t('scenario.prevBlock')}
+              </button>
+              <span className="focus-counter">
+                {t('scenario.blockLabel')} {selectedIndex + 1} / {total}
+              </span>
+              <button
+                type="button"
+                className="link"
+                disabled={selectedIndex === total - 1}
+                onClick={() => go(1)}
+              >
+                {t('scenario.nextBlock')}
+              </button>
+              <span className="spacer" />
+              <span className="muted kbd-hint">{t('scenario.kbdHint')}</span>
+            </div>
+
+            <ClauseCard
+              key={selected.id}
+              partnershipId={partnershipId}
+              sessionId={sessionId}
+              clause={selected}
+              partners={partners}
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="muted">{t('sessions.empty')}</p>
+      )}
     </>
   );
 }
@@ -100,8 +228,11 @@ interface ClauseCardProps {
   partners: Partner[];
 }
 
+type Dialog = { kind: 'na' } | { kind: 'restore'; versionId: string } | null;
+
 function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardProps) {
   const update = useUpdateClause(partnershipId, sessionId);
+  const flush = useFlushClause(partnershipId, sessionId);
   const signoff = useSetSignoff(partnershipId, sessionId);
   const [showVersions, setShowVersions] = useState(false);
   const versions = useClauseVersions(partnershipId, sessionId, clause.id, showVersions);
@@ -110,7 +241,11 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
   const [text, setText] = useState(clause.text ?? '');
   const [rationale, setRationale] = useState(clause.rationale ?? '');
   const [saved, setSaved] = useState(false);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [naReason, setNaReason] = useState(clause.naReason ?? '');
   const savedRef = useRef({ text: clause.text ?? '', rationale: clause.rationale ?? '' });
+  const latestRef = useRef({ text, rationale });
+  latestRef.current = { text, rationale };
 
   // FR-4.1: autosave the formulation + rationale with a short debounce (≤ 2s).
   useEffect(() => {
@@ -131,6 +266,19 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
     return () => clearTimeout(handle);
   }, [text, rationale, clause.id, update.mutate]);
 
+  // Flush any pending edit when the focused block unmounts (block switch).
+  useEffect(() => {
+    return () => {
+      const latest = latestRef.current;
+      if (
+        latest.text !== savedRef.current.text ||
+        latest.rationale !== savedRef.current.rationale
+      ) {
+        flush(clause.id, latest);
+      }
+    };
+  }, [flush, clause.id]);
+
   function editText(value: string) {
     setSaved(false);
     setText(value);
@@ -146,14 +294,8 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
       return;
     }
     if (status === 'not_applicable') {
-      if (!window.confirm(t('scenario.naWarning'))) {
-        return;
-      }
-      const reason = window.prompt(t('scenario.naReasonPrompt'), clause.naReason ?? '');
-      if (!reason || !reason.trim()) {
-        return;
-      }
-      update.mutate({ clauseId: clause.id, body: { status, naReason: reason.trim() } });
+      setNaReason(clause.naReason ?? '');
+      setDialog({ kind: 'na' });
       return;
     }
     if (status === 'agreed') {
@@ -164,10 +306,18 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
     update.mutate({ clauseId: clause.id, body: { status } });
   }
 
-  function onRestore(versionId: string) {
-    if (!window.confirm(t('history.restoreConfirm'))) {
+  function confirmNa() {
+    const reason = naReason.trim();
+    if (!reason) {
       return;
     }
+    update.mutate(
+      { clauseId: clause.id, body: { status: 'not_applicable', naReason: reason } },
+      { onSuccess: () => setDialog(null) },
+    );
+  }
+
+  function confirmRestore(versionId: string) {
     restoreVersion.mutate(
       { clauseId: clause.id, versionId },
       {
@@ -176,6 +326,7 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
           setRationale(updated.rationale ?? '');
           savedRef.current = { text: updated.text ?? '', rationale: updated.rationale ?? '' };
           setSaved(false);
+          setDialog(null);
         },
       },
     );
@@ -187,7 +338,7 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
     partners.length > 0 && partners.every((p) => signoffByPartner.get(p.id)?.agreed);
 
   return (
-    <li className="card clause">
+    <div className="card clause">
       <div className="clause-head">
         <strong>
           {clause.question.number}. {clause.question.title}
@@ -199,7 +350,7 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
         <span className={`badge badge-${clause.status}`}>{t(statusLabelKey[clause.status])}</span>
       </div>
 
-      {clause.question.prompt ? <p>{clause.question.prompt}</p> : null}
+      {clause.question.prompt ? <p className="clause-prompt">{clause.question.prompt}</p> : null}
       {clause.question.helperQuestions.length > 0 ? (
         <ul className="helpers">
           {clause.question.helperQuestions.map((helper) => (
@@ -211,7 +362,7 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
       ) : null}
 
       {clause.status === 'not_applicable' && clause.naReason ? (
-        <p className="muted">
+        <p className="muted na-reason">
           {t('scenario.naReasonLabel')}: {clause.naReason}
         </p>
       ) : null}
@@ -268,11 +419,25 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
             ))}
           </select>
         </label>
-        <span className="muted save-state">
-          {update.isPending ? t('capture.saving') : saved ? t('capture.saved') : ''}
+        <span className={`save-state ${update.isError ? 'save-error' : 'muted'}`}>
+          {update.isPending
+            ? t('capture.saving')
+            : update.isError
+              ? apiErrorMessage(update.error)
+              : saved
+                ? t('capture.saved')
+                : ''}
         </span>
+        {update.isError && update.variables ? (
+          <button
+            type="button"
+            className="link"
+            onClick={() => update.variables && update.mutate(update.variables)}
+          >
+            {t('common.retry')}
+          </button>
+        ) : null}
       </div>
-      {update.isError ? <p className="error">{t('common.error')}</p> : null}
 
       <div className="versions">
         <button type="button" className="link" onClick={() => setShowVersions((value) => !value)}>
@@ -306,7 +471,7 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
                   type="button"
                   className="link"
                   disabled={restoreVersion.isPending}
-                  onClick={() => onRestore(version.id)}
+                  onClick={() => setDialog({ kind: 'restore', versionId: version.id })}
                 >
                   {t('history.restore')}
                 </button>
@@ -315,6 +480,53 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
           </ul>
         ) : null}
       </div>
-    </li>
+
+      {dialog?.kind === 'na' ? (
+        <Modal
+          title={t('scenario.naDialogTitle')}
+          onClose={() => setDialog(null)}
+          footer={
+            <>
+              <button type="button" className="link" onClick={() => setDialog(null)}>
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                className="danger"
+                disabled={!naReason.trim() || update.isPending}
+                onClick={confirmNa}
+              >
+                {t('scenario.naConfirm')}
+              </button>
+            </>
+          }
+        >
+          <p className="warn-text">{t('scenario.naWarning')}</p>
+          <label className="field">
+            <span className="field-label">{t('scenario.naReasonLabel')}</span>
+            <textarea
+              autoFocus
+              rows={3}
+              value={naReason}
+              onChange={(event) => setNaReason(event.target.value)}
+              placeholder={t('scenario.naReasonPrompt')}
+            />
+          </label>
+          {update.isError ? <p className="error">{apiErrorMessage(update.error)}</p> : null}
+        </Modal>
+      ) : null}
+
+      {dialog?.kind === 'restore' ? (
+        <ConfirmDialog
+          title={t('history.restoreTitle')}
+          message={t('history.restoreConfirm')}
+          confirmLabel={t('history.restore')}
+          danger
+          busy={restoreVersion.isPending}
+          onCancel={() => setDialog(null)}
+          onConfirm={() => confirmRestore(dialog.versionId)}
+        />
+      ) : null}
+    </div>
   );
 }

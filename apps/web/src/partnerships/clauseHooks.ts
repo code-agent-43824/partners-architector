@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import {
+  type Clause,
+  type ClauseSignoff,
   listClauses,
   listClauseVersions,
   restoreClauseVersion,
@@ -23,6 +26,18 @@ const versionsKey = (partnershipId: string, sessionId: string, clauseId: string)
   clauseId,
 ];
 
+/** Replace a single clause in the cached list without refetching all 30. */
+function replaceClause(
+  qc: ReturnType<typeof useQueryClient>,
+  partnershipId: string,
+  sessionId: string,
+  updated: Clause,
+) {
+  qc.setQueryData<Clause[]>(clausesKey(partnershipId, sessionId), (old) =>
+    old ? old.map((c) => (c.id === updated.id ? updated : c)) : old,
+  );
+}
+
 export function useClauses(partnershipId: string, sessionId: string) {
   return useQuery({
     queryKey: clausesKey(partnershipId, sessionId),
@@ -35,10 +50,33 @@ export function useUpdateClause(partnershipId: string, sessionId: string) {
   return useMutation({
     mutationFn: (args: { clauseId: string; body: UpdateClauseInput }) =>
       updateClause(partnershipId, sessionId, args.clauseId, args.body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: clausesKey(partnershipId, sessionId) });
+    // FR-4.1: autosave writes the PATCH result straight into the cache so a
+    // single-block save never refetches the whole 30-clause list.
+    onSuccess: (updated) => {
+      replaceClause(qc, partnershipId, sessionId, updated);
     },
   });
+}
+
+/**
+ * Persist a formulation edit immediately and write the result into the cache.
+ * Used to flush a pending autosave when the focused block unmounts (a
+ * mid-edit block switch must never drop text); bypasses the mutation observer
+ * so it still completes after the owning component has gone.
+ */
+export function useFlushClause(partnershipId: string, sessionId: string) {
+  const qc = useQueryClient();
+  return useCallback(
+    (clauseId: string, body: { text: string; rationale: string }) => {
+      updateClause(partnershipId, sessionId, clauseId, body)
+        .then((updated) => replaceClause(qc, partnershipId, sessionId, updated))
+        .catch(() => {
+          /* offline / server unreachable — the debounced autosave already
+             surfaces the failure; nothing to update in the cache. */
+        });
+    },
+    [qc, partnershipId, sessionId],
+  );
 }
 
 export function useSetSignoff(partnershipId: string, sessionId: string) {
@@ -46,8 +84,19 @@ export function useSetSignoff(partnershipId: string, sessionId: string) {
   return useMutation({
     mutationFn: (args: { clauseId: string; partnerId: string; agreed: boolean }) =>
       setClauseSignoff(partnershipId, sessionId, args.clauseId, args.partnerId, args.agreed),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: clausesKey(partnershipId, sessionId) });
+    // The endpoint returns the single sign-off; merge it into its clause's list.
+    onSuccess: (signoff: ClauseSignoff, args) => {
+      qc.setQueryData<Clause[]>(clausesKey(partnershipId, sessionId), (old) =>
+        old
+          ? old.map((c) => {
+              if (c.id !== args.clauseId) {
+                return c;
+              }
+              const others = c.signoffs.filter((s) => s.partnerId !== signoff.partnerId);
+              return { ...c, signoffs: [...others, signoff] };
+            })
+          : old,
+      );
     },
   });
 }
@@ -81,8 +130,8 @@ export function useRestoreVersion(partnershipId: string, sessionId: string) {
   return useMutation({
     mutationFn: (args: { clauseId: string; versionId: string }) =>
       restoreClauseVersion(partnershipId, sessionId, args.clauseId, args.versionId),
-    onSuccess: (_data, args) => {
-      void qc.invalidateQueries({ queryKey: clausesKey(partnershipId, sessionId) });
+    onSuccess: (updated, args) => {
+      replaceClause(qc, partnershipId, sessionId, updated);
       void qc.invalidateQueries({ queryKey: versionsKey(partnershipId, sessionId, args.clauseId) });
     },
   });

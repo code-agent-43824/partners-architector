@@ -2,6 +2,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 
 import { useLogout, useMe } from '../auth/useAuth';
 import { t } from '../i18n';
+import { ConnectionBanner } from './ConnectionBanner';
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export function AppLayout() {
           {t('nav.logout')}
         </button>
       </header>
+      <ConnectionBanner />
       <main className="content">
         <Outlet />
       </main>
