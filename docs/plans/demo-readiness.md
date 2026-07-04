@@ -12,9 +12,10 @@
   content caveat). This plan **re-sequences** spec §11: parts of Phase 4
   (assembly/export of the agreement) are pulled forward; Phase 2 (calculator)
   and Phase 3 (matrix) move to after the demo feedback.
-- **Status:** in progress. **D1 done** (code-complete + browser-verified,
-  2026-07-03, commit `6f28972`; awaiting a web-only `psa-web` deploy by Watson).
-  D2–D5 planned; D2 is next.
+- **Status:** in progress. **D1 done and live** (2026-07-03, in release
+  `e12a084`). **D2 done** (code-complete + browser-verified, 2026-07-04,
+  commit `22b0aa4`; awaiting a `psa-api`+`psa-web` deploy that also fixes a
+  live D1 edit-crash regression — see HANDOFF). D3–D5 planned; D3 is next.
 
 ## 1. Rationale (why this order)
 
