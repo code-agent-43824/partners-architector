@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AccountsModule } from './accounts/accounts.module';
+import { AgreementModule } from './agreement/agreement.module';
 import { AuthModule } from './auth/auth.module';
 import { validateEnv } from './config/env';
 import { HealthModule } from './health/health.module';
@@ -21,6 +22,7 @@ import { SessionsModule } from './sessions/sessions.module';
     PartnersModule,
     SessionsModule,
     ScenarioModule,
+    AgreementModule,
     HealthModule,
   ],
 })

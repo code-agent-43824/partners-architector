@@ -179,6 +179,14 @@ export function ScenarioPage() {
         {t('scenario.agreedOf')}: {agreed} / {total} · {t('scenario.heavyOpen')}: {heavyOpen} ·{' '}
         {t('scenario.disputedParked')}: {disputedParked}
       </p>
+      <p>
+        <Link
+          className="link"
+          to={`/partnerships/${partnershipId}/sessions/${sessionId}/agreement`}
+        >
+          {t('agreement.assemble')}
+        </Link>
+      </p>
 
       {selected ? (
         <div className="scenario">

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { AppLayout } from './components/AppLayout';
+import { AgreementPage } from './pages/AgreementPage';
 import { LoginPage } from './pages/LoginPage';
 import { PartnershipDetailPage } from './pages/PartnershipDetailPage';
 import { PartnershipsPage } from './pages/PartnershipsPage';
@@ -23,6 +24,10 @@ export function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/partnerships/:id" element={<PartnershipDetailPage />} />
         <Route path="/partnerships/:partnershipId/sessions/:sessionId" element={<ScenarioPage />} />
+        <Route
+          path="/partnerships/:partnershipId/sessions/:sessionId/agreement"
+          element={<AgreementPage />}
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
