@@ -13,9 +13,11 @@
   (assembly/export of the agreement) are pulled forward; Phase 2 (calculator)
   and Phase 3 (matrix) move to after the demo feedback.
 - **Status:** in progress. **D1 done and live** (2026-07-03, in release
-  `e12a084`). **D2 done** (code-complete + browser-verified, 2026-07-04,
-  commit `22b0aa4`; awaiting a `psa-api`+`psa-web` deploy that also fixes a
-  live D1 edit-crash regression — see HANDOFF). D3–D5 planned; D3 is next.
+  `e12a084`). **D2 + D3 done** (code-complete + browser-verified, 2026-07-04;
+  D2 `22b0aa4` = manual shares + смысл долей + a live D1 edit-crash fix, D3
+  `f04061c` = agreement assembly + printable view). Both await a combined
+  `psa-api`+`psa-web` deploy — see HANDOFF. D4–D5 planned; **D4 is next**
+  (server PDF/DOCX export — gated on Watson's W5 sanitization).
 
 ## 1. Rationale (why this order)
 
