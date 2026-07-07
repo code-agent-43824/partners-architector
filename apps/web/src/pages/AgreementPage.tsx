@@ -47,10 +47,25 @@ export function AgreementPage() {
           {t('agreement.back')}
         </Link>
         <span className="spacer" />
+        <a
+          className="download-btn"
+          href={`/api/partnerships/${partnershipId}/sessions/${sessionId}/agreement/export/pdf`}
+          download
+        >
+          {t('agreement.downloadPdf')}
+        </a>
+        <a
+          className="download-btn"
+          href={`/api/partnerships/${partnershipId}/sessions/${sessionId}/agreement/export/docx`}
+          download
+        >
+          {t('agreement.downloadDocx')}
+        </a>
         <button type="button" onClick={() => window.print()}>
           {t('agreement.print')}
         </button>
       </div>
+      <p className="muted export-note no-print">{t('agreement.exportNote')}</p>
 
       <article className="agreement-doc">
         <header className="doc-title">

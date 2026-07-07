@@ -9,9 +9,12 @@
 # packaging can come with the production hardening pass.
 FROM node:22-slim
 
-# Prisma's engines need OpenSSL at runtime.
+# Prisma's engines need OpenSSL at runtime. The agreement PDF export (D4)
+# renders through headless Chromium, so the image also carries fonts with
+# full Cyrillic coverage (DOC-4: correct кириллица in exported PDFs).
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
+    fonts-dejavu-core fonts-liberation \
   && rm -rf /var/lib/apt/lists/*
 
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
@@ -27,6 +30,13 @@ COPY . .
 RUN pnpm install --frozen-lockfile \
   && pnpm --filter @psa/shared build \
   && pnpm --filter @psa/api build
+
+# Headless Chromium for the PDF export (spec §7.3). Downloads a PREBUILT
+# browser matching the pinned playwright-core version (no compilation) and
+# installs its system libraries via apt. Adds ~300-500 MB to the image and a
+# few minutes to the build — expected.
+RUN pnpm --filter @psa/api exec playwright-core install --with-deps chromium \
+  && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 WORKDIR /repo/apps/api

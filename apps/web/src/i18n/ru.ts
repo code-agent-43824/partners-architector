@@ -151,6 +151,10 @@ export const ru = {
   'agreement.confirmedAll': '✓ Подтверждено всеми партнёрами',
   'agreement.confirmedBy': 'Подтвердили',
   'agreement.notConfirmed': 'Не подтверждено',
+  'agreement.downloadPdf': 'Скачать PDF',
+  'agreement.downloadDocx': 'Скачать DOCX',
+  'agreement.exportNote':
+    'Экспортированный файл сохраняется на вашем устройстве, вне хранилища приложения. Обращайтесь с ним как с конфиденциальным документом.',
   'history.show': 'История версий',
   'history.hide': 'Скрыть историю',
   'history.save': 'Сохранить версию',

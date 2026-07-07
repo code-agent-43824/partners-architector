@@ -190,7 +190,13 @@ export class ScenarioService {
       await tx.clauseVersion.create({ data: this.versionData(clause, null) });
       return tx.clause.update({
         where: { id: clauseId },
-        data: { text: version.text, rationale: version.rationale, status: version.status },
+        data: {
+          // Re-sanitize on restore: versions snapshotted before the write-side
+          // sanitizer went live may still carry unsanitized editor HTML.
+          text: version.text === null ? null : sanitizeClauseHtml(version.text),
+          rationale: version.rationale,
+          status: version.status,
+        },
         include: clauseInclude,
       });
     });

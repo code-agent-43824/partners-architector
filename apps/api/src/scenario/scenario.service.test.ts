@@ -345,6 +345,31 @@ describe('ScenarioService', () => {
     );
   });
 
+  it('restoreVersion sanitizes version HTML written before the write-side sanitizer', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({
+      id: CID,
+      sessionId: SID,
+      text: 'current',
+      rationale: null,
+      status: ClauseStatus.in_progress,
+    });
+    prisma.clauseVersion.findUnique.mockResolvedValue({
+      id: VID,
+      clauseId: CID,
+      text: '<p onclick="x">Old</p><script>alert(1)</script>',
+      rationale: null,
+      status: ClauseStatus.in_progress,
+    });
+    prisma.clause.update.mockResolvedValue({});
+    await service.restoreVersion(architect, PID, SID, CID, VID);
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { text: '<p>Old</p>', rationale: null, status: ClauseStatus.in_progress },
+      }),
+    );
+  });
+
   it('restoreVersion rejects a version from another clause', async () => {
     grantAccess();
     prisma.clause.findUnique.mockResolvedValue({

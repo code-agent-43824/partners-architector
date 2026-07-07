@@ -29,6 +29,14 @@ export const envSchema = z.object({
   // Optional initial admin, created on first boot if no admin exists.
   AUTH_ADMIN_EMAIL: z.string().email().optional(),
   AUTH_ADMIN_PASSWORD: z.string().min(8).optional(),
+
+  // Optional explicit Chromium executable for the PDF export (dev machines
+  // with a preinstalled browser). Unset in production: the api image installs
+  // playwright-core's own prebuilt Chromium at build time.
+  PSA_CHROMIUM_PATH: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().min(1).optional(),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

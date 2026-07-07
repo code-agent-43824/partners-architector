@@ -744,6 +744,23 @@ section h3 {
   flex: 1;
 }
 
+.download-btn {
+  display: inline-block;
+  padding: 0.5rem 0.875rem;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #2f6df6;
+  color: #2f6df6;
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.export-note {
+  max-width: 800px;
+  margin: -0.5rem auto 1rem;
+  font-size: 0.8125rem;
+}
+
 .agreement-doc {
   max-width: 800px;
   margin: 0 auto;
