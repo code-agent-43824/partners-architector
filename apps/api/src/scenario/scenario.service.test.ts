@@ -139,6 +139,33 @@ describe('ScenarioService', () => {
     );
   });
 
+  it('sanitizes formulation HTML before persisting it', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });
+    prisma.clause.update.mockResolvedValue({});
+    await service.updateClause(architect, PID, SID, CID, {
+      text: '<p onclick="x">Hello <strong data-x="1">team</strong></p><script>alert(1)</script><img src=x onerror=alert(2)>',
+    });
+    expect(prisma.clause.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: CID },
+        data: { text: '<p>Hello <strong>team</strong></p>' },
+      }),
+    );
+  });
+
+  it('checks "agreed" against sanitized text from the same request', async () => {
+    grantAccess();
+    prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });
+    await expect(
+      service.updateClause(architect, PID, SID, CID, {
+        status: ClauseStatus.agreed,
+        text: '<script>alert(1)</script>',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.clause.update).not.toHaveBeenCalled();
+  });
+
   it('persists structured shares data (FR-5.7) and returns clause relations', async () => {
     grantAccess();
     prisma.clause.findUnique.mockResolvedValue({ id: CID, sessionId: SID, text: null });

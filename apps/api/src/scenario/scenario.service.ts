@@ -11,6 +11,7 @@ import type { AuthUser } from '../auth/auth.types';
 import { assertCanAccessOwned } from '../common/ownership';
 import { PrismaService } from '../prisma/prisma.service';
 import type { SaveVersionDto, SetSignoffDto, UpdateClauseDto } from './dto';
+import { sanitizeClauseHtml } from './html-sanitizer';
 
 /** Question fields surfaced alongside a clause for the scenario walk (FR-3.3). */
 const questionSelect = {
@@ -94,12 +95,14 @@ export class ScenarioService {
   ): Promise<Clause> {
     await this.assertSessionAccess(user, partnershipId, sessionId);
     const clause = await this.getClauseInSession(clauseId, sessionId);
+    const text =
+      dto.text === undefined || dto.text === null ? dto.text : sanitizeClauseHtml(dto.text);
 
     const statusData: { status?: ClauseStatus; naReason?: string | null } = {};
     if (dto.status !== undefined) {
       // FR-3.4: "agreed" is only available when there is agreement text —
-      // counting text being set in the same request.
-      const effectiveText = dto.text !== undefined ? dto.text : clause.text;
+      // counting sanitized text being set in the same request.
+      const effectiveText = text !== undefined ? text : clause.text;
       if (dto.status === ClauseStatus.agreed && !effectiveText?.trim()) {
         throw new ConflictException('A block can be marked agreed only when it has agreement text');
       }
@@ -112,7 +115,7 @@ export class ScenarioService {
     const data = {
       // FR-4.1/4.2: capture formulation text + rationale. Source stays
       // `manual` (default) until AI drafting arrives in Phase 7.
-      ...(dto.text !== undefined ? { text: dto.text } : {}),
+      ...(text !== undefined ? { text } : {}),
       ...(dto.rationale !== undefined ? { rationale: dto.rationale } : {}),
       // FR-5.7/5.8: structured shares (block №5) / meaning of shares (block №6).
       ...(dto.structuredData !== undefined
