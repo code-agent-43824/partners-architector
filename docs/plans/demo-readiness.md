@@ -12,12 +12,11 @@
   content caveat). This plan **re-sequences** spec §11: parts of Phase 4
   (assembly/export of the agreement) are pulled forward; Phase 2 (calculator)
   and Phase 3 (matrix) move to after the demo feedback.
-- **Status:** in progress. **D1 done and live** (2026-07-03, in release
-  `e12a084`). **D2 + D3 done** (code-complete + browser-verified, 2026-07-04;
-  D2 `22b0aa4` = manual shares + смысл долей + a live D1 edit-crash fix, D3
-  `f04061c` = agreement assembly + printable view). Both await a combined
-  `psa-api`+`psa-web` deploy — see HANDOFF. D4–D5 planned; **D4 is next**
-  (server PDF/DOCX export — gated on Watson's W5 sanitization).
+- **Status:** in progress. **D1–D3 + W5 live** (release `c38f6d8`,
+  2026-07-07). **D4 done** (code-complete + full-stack-verified, 2026-07-07,
+  commit `9de6c8f`: server PDF via headless Chromium + DOCX via the `docx`
+  lib + `export_record` logging; awaiting a `psa-api`(heavy Chromium
+  layer)+`psa-web` deploy — see HANDOFF). **D5 (demo kit) is next.**
 
 ## 1. Rationale (why this order)
 
