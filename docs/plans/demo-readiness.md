@@ -12,12 +12,11 @@
   content caveat). This plan **re-sequences** spec §11: parts of Phase 4
   (assembly/export of the agreement) are pulled forward; Phase 2 (calculator)
   and Phase 3 (matrix) move to after the demo feedback.
-- **Status:** **D1–D4 live** (release `ceb9f86`, 2026-07-07). **D5 done**
-  (code-complete + dry-run-verified, 2026-07-08, commit `d7b5b23`:
-  idempotent `db:seed:demo`, demo script `docs/demo/demo-script.md`,
-  Dockerfile browser-layer optimization; awaiting an api-only deploy +
-  one-time seed run — see HANDOFF). **The plan is complete in code; after
-  the D5 deploy the demo can be scheduled (owner decisions O2/O5).**
+- **Status:** **D1–D5 live** (D5 deployed 2026-07-09 as api release
+  `109ff60`, web unchanged at `ceb9f86`). D5 includes the idempotent
+  `db:seed:demo`, demo script `docs/demo/demo-script.md`, and Dockerfile
+  browser-layer optimization; the live demo DB has one reference demo case.
+  **The demo can be scheduled (owner decisions O2/O5).**
 
 ## 1. Rationale (why this order)
 
