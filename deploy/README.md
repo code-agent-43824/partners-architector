@@ -98,6 +98,32 @@ the DB volume. OCI-managed block-volume encryption, if required for SEC-6,
 must be verified in the OCI console or tenancy settings because it is not
 observable from this guest-level check.
 
+## Oracle host health cron
+
+The current Oracle host has a local health-check cron for the public endpoint:
+
+- Script: `/opt/partners-architector/bin/health-check.sh` (root-owned, mode
+  `0750`).
+- Log/state directory: `/opt/partners-architector/health` (root-owned, mode
+  `0700`).
+- Log file: `/opt/partners-architector/health/health-check.log` (mode `0600`).
+- Schedule: `/etc/cron.d/partners-architector-health-check`, every 5 minutes.
+- Checks, from the Oracle host: public SPA `/`, `/api/health`, and
+  `/api/health/db` at `https://partners-architector.duckdns.org`.
+- Failure behavior: every run is appended to the local log; after 3 consecutive
+  failed runs the script writes a clear journald marker with tag
+  `partners-architector-health` and a restart-investigation hint. When the
+  service recovers after repeated failures, it writes a recovery marker.
+
+This is intentionally local-only monitoring: no external alerting service, no
+webhook, and no secrets. Useful inspection commands:
+
+```sh
+tail -50 /opt/partners-architector/health/health-check.log
+journalctl -t partners-architector-health -n 50 --no-pager
+systemctl is-active crond
+```
+
 ## Docker Compose deploy (runbook)
 
 From the repository root, with `COMPOSE="docker compose --env-file deploy/.env -f deploy/docker-compose.yml"`:
