@@ -119,6 +119,12 @@ From the repository root, with `COMPOSE="docker compose --env-file deploy/.env -
 5. `$COMPOSE logs -f api` / `$COMPOSE ps` to check health; `$COMPOSE down`
    to stop (`down -v` also drops the database volume).
 
+Before a production deploy, Watson should run the normal local checks plus the
+committed smoke suite where Docker/Podman Compose or Podman is available:
+`pnpm test:e2e`. The e2e runner creates its own disposable database, then
+migrates, seeds, starts the API locally, asserts the critical API path, and
+tears everything down.
+
 ### Notes
 
 - **TLS:** terminate TLS at a reverse proxy (Caddy/nginx) in front of `web`

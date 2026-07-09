@@ -10,12 +10,13 @@ Current public placeholder: <https://partners-architector.duckdns.org/>
 
 ## Development
 
-Before making changes, read [AGENTS.md](AGENTS.md) — it defines the working rules for human and coding-agent contributors — and [HANDOFF.md](HANDOFF.md) for in-flight work. Common commands (Node 22, pnpm 10) live in [CLAUDE.md](CLAUDE.md): `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+Before making changes, read [AGENTS.md](AGENTS.md) — it defines the working rules for human and coding-agent contributors — and [HANDOFF.md](HANDOFF.md) for in-flight work. Common commands (Node 22, pnpm 10) live in [CLAUDE.md](CLAUDE.md): `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`.
 
 ### Running locally
 
 - **Full stack (Docker):** `cp deploy/.env.example deploy/.env` (set `POSTGRES_PASSWORD` and `AUTH_JWT_SECRET`), then `docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d --build` and `… exec api pnpm --filter @psa/api db:seed`; open <http://localhost:8080>. Details and the deploy runbook: [deploy/README.md](deploy/README.md).
 - **Front-end dev:** start the database (and API), then `pnpm --filter @psa/web dev` — Vite serves the SPA at :5173 and proxies `/api` to the API at :3000.
+- **Committed e2e smoke:** `pnpm test:e2e` starts a disposable database through Docker/Podman Compose or plain Podman, runs migrations + seed, starts the API locally, and asserts auth/CSRF/isolation, partnerships, partners, sessions, scenario capture, sign-offs, versions, structured shares, and agreement assembly. Details: [tests/e2e/README.md](tests/e2e/README.md).
 
 ## Deployment
 
