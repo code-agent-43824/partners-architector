@@ -12,11 +12,12 @@
   content caveat). This plan **re-sequences** spec §11: parts of Phase 4
   (assembly/export of the agreement) are pulled forward; Phase 2 (calculator)
   and Phase 3 (matrix) move to after the demo feedback.
-- **Status:** in progress. **D1–D3 + W5 live** (release `c38f6d8`,
-  2026-07-07). **D4 done** (code-complete + full-stack-verified, 2026-07-07,
-  commit `9de6c8f`: server PDF via headless Chromium + DOCX via the `docx`
-  lib + `export_record` logging; awaiting a `psa-api`(heavy Chromium
-  layer)+`psa-web` deploy — see HANDOFF). **D5 (demo kit) is next.**
+- **Status:** **D1–D4 live** (release `ceb9f86`, 2026-07-07). **D5 done**
+  (code-complete + dry-run-verified, 2026-07-08, commit `d7b5b23`:
+  idempotent `db:seed:demo`, demo script `docs/demo/demo-script.md`,
+  Dockerfile browser-layer optimization; awaiting an api-only deploy +
+  one-time seed run — see HANDOFF). **The plan is complete in code; after
+  the D5 deploy the demo can be scheduled (owner decisions O2/O5).**
 
 ## 1. Rationale (why this order)
 
