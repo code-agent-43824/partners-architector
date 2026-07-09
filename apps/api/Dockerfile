@@ -21,6 +21,14 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /repo
 
+# Headless Chromium for the PDF export (spec §7.3), installed BEFORE the
+# source COPY so routine code-only rebuilds reuse this cached layer instead
+# of re-downloading the ~170 MB browser. PREBUILT binary — no compilation.
+# The version MUST match "playwright-core" in apps/api/package.json (the
+# runtime resolves the browser by its own revision).
+RUN npx -y playwright-core@1.61.1 install --with-deps chromium \
+  && rm -rf /var/lib/apt/lists/*
+
 # Prisma should not try to auto-install its CLI via a nested package-manager
 # call during generate (breaks inside a running install).
 ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=true
@@ -30,13 +38,6 @@ COPY . .
 RUN pnpm install --frozen-lockfile \
   && pnpm --filter @psa/shared build \
   && pnpm --filter @psa/api build
-
-# Headless Chromium for the PDF export (spec §7.3). Downloads a PREBUILT
-# browser matching the pinned playwright-core version (no compilation) and
-# installs its system libraries via apt. Adds ~300-500 MB to the image and a
-# few minutes to the build — expected.
-RUN pnpm --filter @psa/api exec playwright-core install --with-deps chromium \
-  && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 WORKDIR /repo/apps/api

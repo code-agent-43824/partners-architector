@@ -14,7 +14,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:reset": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma migrate reset",
     "db:seed": "tsx src/seed/seed.run.ts",
-    "postinstall": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma generate"
+    "postinstall": "PRISMA_GENERATE_SKIP_AUTOINSTALL=true prisma generate",
+    "db:seed:demo": "tsx src/seed/demo.run.ts"
   },
   "prisma": {
     "seed": "tsx src/seed/seed.run.ts"
