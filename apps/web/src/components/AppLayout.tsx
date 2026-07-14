@@ -12,7 +12,9 @@ export function AppLayout() {
   return (
     <div className="page">
       <header className="topbar">
-        <strong>{t('appName')}</strong>
+        <Link className="brand" to="/">
+          {t('appName')}
+        </Link>
         <span className="spacer" />
         {user ? <span className="muted">{user.email}</span> : null}
         <Link className="link" to="/profile">
