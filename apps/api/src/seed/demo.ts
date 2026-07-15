@@ -280,15 +280,17 @@ export async function seedDemo(
     );
   }
 
-  // Dedicated demo account; a re-run rotates the password to the provided one.
+  // Dedicated demo account; a re-run rotates the password to the provided one
+  // and re-enables the guided onboarding so every demo starts guided (D7).
   const account = await prisma.account.upsert({
     where: { email },
-    update: { passwordHash: options.passwordHash, role: Role.architect },
+    update: { passwordHash: options.passwordHash, role: Role.architect, guidedMode: true },
     create: {
       email,
       passwordHash: options.passwordHash,
       role: Role.architect,
       displayName: 'Демо-архитектор',
+      guidedMode: true,
     },
   });
 

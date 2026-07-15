@@ -1,12 +1,13 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 
-import { useLogout, useMe } from '../auth/useAuth';
+import { useLogout } from '../auth/useAuth';
 import { t } from '../i18n';
 import { ConnectionBanner } from './ConnectionBanner';
+import { GuidedOverlay } from './GuidedOverlay';
+import { UserMenu } from './UserMenu';
 
 export function AppLayout() {
   const navigate = useNavigate();
-  const { data: user } = useMe();
   const logout = useLogout();
 
   return (
@@ -16,10 +17,7 @@ export function AppLayout() {
           {t('appName')}
         </Link>
         <span className="spacer" />
-        {user ? <span className="muted">{user.email}</span> : null}
-        <Link className="link" to="/profile">
-          {t('nav.profile')}
-        </Link>
+        <UserMenu />
         <button
           type="button"
           onClick={() =>
@@ -33,6 +31,7 @@ export function AppLayout() {
       <main className="content">
         <Outlet />
       </main>
+      <GuidedOverlay />
     </div>
   );
 }

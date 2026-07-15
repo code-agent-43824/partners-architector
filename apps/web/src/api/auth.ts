@@ -7,6 +7,8 @@ export interface AuthUser {
   email: string;
   role: Role;
   displayName: string | null;
+  /** Guided onboarding interstitials (D7): per-user toggle. */
+  guidedMode: boolean;
 }
 
 export function login(email: string, password: string): Promise<AuthUser> {
@@ -26,4 +28,8 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
     method: 'POST',
     body: { currentPassword, newPassword },
   });
+}
+
+export function updatePreferences(guidedMode: boolean): Promise<AuthUser> {
+  return apiFetch<AuthUser>('/auth/preferences', { method: 'PATCH', body: { guidedMode } });
 }

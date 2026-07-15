@@ -6,6 +6,8 @@ export interface AuthUser {
   email: string;
   role: Role;
   displayName: string | null;
+  /** Guided onboarding interstitials (D7): per-user toggle. */
+  guidedMode: boolean;
 }
 
 /** Claims carried in the session JWT. */

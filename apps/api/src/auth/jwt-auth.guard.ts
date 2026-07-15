@@ -63,6 +63,7 @@ export class JwtAuthGuard implements CanActivate {
       email: account.email,
       role: account.role,
       displayName: account.displayName,
+      guidedMode: account.guidedMode,
     };
     return true;
   }

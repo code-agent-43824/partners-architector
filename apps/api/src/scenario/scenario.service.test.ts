@@ -11,8 +11,15 @@ const architect: AuthUser = {
   email: 'a@x.io',
   role: Role.architect,
   displayName: null,
+  guidedMode: true,
 };
-const admin: AuthUser = { id: 'admin-1', email: 'admin@x.io', role: Role.admin, displayName: null };
+const admin: AuthUser = {
+  id: 'admin-1',
+  email: 'admin@x.io',
+  role: Role.admin,
+  displayName: null,
+  guidedMode: true,
+};
 const OTHER_OWNER = 'arch-2';
 const PID = 'p-1';
 const SID = 's-1';

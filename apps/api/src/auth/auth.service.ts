@@ -10,7 +10,7 @@ import { type Account, AccountStatus, Role } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from './auth.types';
-import type { ChangePasswordDto, RegisterDto } from './dto';
+import type { ChangePasswordDto, RegisterDto, UpdatePreferencesDto } from './dto';
 import { PasswordService } from './password.service';
 
 function toAuthUser(account: Account): AuthUser {
@@ -19,6 +19,7 @@ function toAuthUser(account: Account): AuthUser {
     email: account.email,
     role: account.role,
     displayName: account.displayName,
+    guidedMode: account.guidedMode,
   };
 }
 
@@ -91,5 +92,14 @@ export class AuthService {
       where: { id: user.id },
       data: { passwordHash: await this.passwords.hash(dto.newPassword) },
     });
+  }
+
+  /** Updates the user's own preferences (D7), returning the fresh principal. */
+  async updatePreferences(user: AuthUser, dto: UpdatePreferencesDto): Promise<AuthUser> {
+    const account = await this.prisma.account.update({
+      where: { id: user.id },
+      data: { guidedMode: dto.guidedMode },
+    });
+    return toAuthUser(account);
   }
 }

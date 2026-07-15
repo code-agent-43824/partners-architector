@@ -194,6 +194,8 @@ model Account {
   role         Role
   status       AccountStatus @default(active)
   displayName  String?       @map("display_name")
+  // Guided onboarding interstitials (D7): per-user toggle, on by default.
+  guidedMode   Boolean       @default(true) @map("guided_mode")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 

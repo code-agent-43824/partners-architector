@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Patch, Post, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 
@@ -16,6 +16,8 @@ import {
   loginSchema,
   type RegisterDto,
   registerSchema,
+  type UpdatePreferencesDto,
+  updatePreferencesSchema,
 } from './dto';
 import { Public } from './public.decorator';
 
@@ -66,6 +68,15 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser): AuthUser {
     return user;
+  }
+
+  // Minimal per-user settings (D7): currently the guided-mode toggle.
+  @Patch('preferences')
+  updatePreferences(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodBody(updatePreferencesSchema)) dto: UpdatePreferencesDto,
+  ): Promise<AuthUser> {
+    return this.auth.updatePreferences(user, dto);
   }
 
   @Throttle(AUTH_THROTTLE)

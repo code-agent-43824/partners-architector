@@ -19,3 +19,9 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8).max(200),
 });
 export type ChangePasswordDto = z.infer<typeof changePasswordSchema>;
+
+/** Minimal per-user preferences (D7); grows as настройки пользователя expand. */
+export const updatePreferencesSchema = z.object({
+  guidedMode: z.boolean(),
+});
+export type UpdatePreferencesDto = z.infer<typeof updatePreferencesSchema>;

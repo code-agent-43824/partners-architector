@@ -14,6 +14,7 @@ const architect: AuthUser = {
   email: 'a@x.io',
   role: Role.architect,
   displayName: null,
+  guidedMode: true,
 };
 
 const emptyDoc: AgreementDocument = {

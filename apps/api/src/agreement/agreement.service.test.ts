@@ -11,6 +11,7 @@ const architect: AuthUser = {
   email: 'a@x.io',
   role: Role.architect,
   displayName: null,
+  guidedMode: true,
 };
 const PID = 'p-1';
 const SID = 's-1';

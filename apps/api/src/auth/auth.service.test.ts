@@ -149,7 +149,13 @@ describe('AuthService', () => {
     prisma.account.update.mockResolvedValue({ id: 'acc-1' });
 
     await service().changePassword(
-      { id: 'acc-1', email: 'user@example.com', role: Role.architect, displayName: null },
+      {
+        id: 'acc-1',
+        email: 'user@example.com',
+        role: Role.architect,
+        displayName: null,
+        guidedMode: true,
+      },
       { currentPassword: 'old-password', newPassword: 'new-password' },
     );
 
@@ -169,12 +175,45 @@ describe('AuthService', () => {
 
     await expect(
       service().changePassword(
-        { id: 'acc-1', email: 'user@example.com', role: Role.architect, displayName: null },
+        {
+          id: 'acc-1',
+          email: 'user@example.com',
+          role: Role.architect,
+          displayName: null,
+          guidedMode: true,
+        },
         { currentPassword: 'wrong-password', newPassword: 'new-password' },
       ),
     ).rejects.toMatchObject({ status: 401 });
 
     expect(passwords.hash).not.toHaveBeenCalled();
     expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it('updatePreferences persists the guided-mode flag and returns the fresh user', async () => {
+    prisma.account.update.mockResolvedValue({
+      id: 'acc-1',
+      email: 'user@example.com',
+      role: Role.architect,
+      displayName: null,
+      guidedMode: false,
+    });
+
+    const result = await service().updatePreferences(
+      {
+        id: 'acc-1',
+        email: 'user@example.com',
+        role: Role.architect,
+        displayName: null,
+        guidedMode: true,
+      },
+      { guidedMode: false },
+    );
+
+    expect(prisma.account.update).toHaveBeenCalledWith({
+      where: { id: 'acc-1' },
+      data: { guidedMode: false },
+    });
+    expect(result.guidedMode).toBe(false);
   });
 });
