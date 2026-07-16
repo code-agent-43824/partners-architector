@@ -171,7 +171,7 @@ export function ScenarioPage() {
 
   return (
     <>
-      <Link className="link" to={`/partnerships/${partnershipId}`}>
+      <Link className="link" to={`/partnerships/${partnershipId}/sessions`}>
         {t('scenario.back')}
       </Link>
       <h1>{t('scenario.title')}</h1>

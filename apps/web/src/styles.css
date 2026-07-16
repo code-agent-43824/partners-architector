@@ -1442,3 +1442,177 @@ a.link {
     padding: 1.3rem 1.2rem;
   }
 }
+
+/* ---------- Partnership card steps (D8) ---------- */
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.page-head-main {
+  flex: 1;
+  min-width: 16rem;
+}
+
+.hero-cta {
+  margin-top: 0.6rem;
+}
+
+.button-primary,
+.button-secondary {
+  display: inline-block;
+  padding: 0.55rem 1.05rem;
+  border-radius: var(--radius-s);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.button-primary {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.button-primary:hover {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.button-secondary {
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.button-secondary:hover {
+  background: var(--accent-soft);
+}
+
+.button-primary.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.stepper {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0 1.5rem;
+  padding: 0.35rem;
+  background: var(--neutral-bg);
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.9rem 0.35rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.step:hover {
+  color: var(--ink);
+}
+
+.step.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted-ink);
+}
+
+.step.active .step-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.step-num.done {
+  background: var(--ok-bg);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.step.active .step-num.done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.step-cta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.9rem;
+  margin: 1.5rem 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.manage-row {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+button.quiet {
+  background: var(--surface);
+  color: var(--ink-2);
+  border: 1px solid var(--line-strong);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+button.quiet:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.session-row .partner-actions button:not(.link) {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.session-row .button-primary,
+.session-row .button-secondary {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}

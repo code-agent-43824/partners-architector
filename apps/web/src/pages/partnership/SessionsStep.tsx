@@ -1,17 +1,18 @@
 import { type FormEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { MIN_PARTNERS } from '../api/partners';
-import type { Session, SessionKind } from '../api/sessions';
-import { t, type TranslationKey } from '../i18n';
-import { usePartners } from '../partnerships/partnerHooks';
+import { MIN_PARTNERS } from '../../api/partners';
+import type { Session, SessionKind } from '../../api/sessions';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { t, type TranslationKey } from '../../i18n';
+import { usePartners } from '../../partnerships/partnerHooks';
 import {
   useCompleteSession,
   useCreateSession,
   useDeleteSession,
   useSessions,
   useStartSession,
-} from '../partnerships/sessionHooks';
+} from '../../partnerships/sessionHooks';
 
 const kindLabelKey: Record<SessionKind, TranslationKey> = {
   initial: 'sessions.kind.initial',
@@ -27,7 +28,14 @@ function sessionLabel(session: Session): string {
   return session.title?.trim() ? session.title : t(kindLabelKey[session.kind]);
 }
 
-export function SessionsSection({ partnershipId }: { partnershipId: string }) {
+/**
+ * Step 3 of the partnership card: sessions with an EXPLICIT primary action per
+ * row — «Начать сессию» starts a draft and opens the scenario; «Открыть
+ * сессию» jumps into the running one (owner request, D8).
+ */
+export function SessionsStep() {
+  const { id: partnershipId = '' } = useParams();
+  const navigate = useNavigate();
   const list = useSessions(partnershipId);
   const partners = usePartners(partnershipId);
   const create = useCreateSession(partnershipId);
@@ -38,11 +46,20 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
   const [kind, setKind] = useState<SessionKind>('initial');
   const [title, setTitle] = useState('');
   const [baselineSessionId, setBaselineSessionId] = useState('');
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const sessions = list.data ?? [];
   const partnerCount = partners.data?.length ?? 0;
   const canStart = partnerCount >= MIN_PARTNERS;
   const reviewWithoutBaseline = kind === 'review' && !baselineSessionId;
+
+  function scenarioPath(sessionId: string) {
+    return `/partnerships/${partnershipId}/sessions/${sessionId}`;
+  }
+
+  function onStart(session: Session) {
+    start.mutate(session.id, { onSuccess: () => navigate(scenarioPath(session.id)) });
+  }
 
   function onCreate(event: FormEvent) {
     event.preventDefault();
@@ -63,7 +80,6 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
 
   return (
     <section>
-      <h2>{t('sessions.title')}</h2>
       {partnerCount < MIN_PARTNERS ? <p className="muted">{t('sessions.needPartners')}</p> : null}
       {list.isLoading ? <p className="muted">{t('common.loading')}</p> : null}
       {list.isError ? <p className="error">{t('common.error')}</p> : null}
@@ -71,11 +87,9 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
 
       <ul className="list">
         {sessions.map((session) => (
-          <li key={session.id} className="list-item">
+          <li key={session.id} className="list-item session-row">
             <span className="partner-name">
-              <Link to={`/partnerships/${partnershipId}/sessions/${session.id}`}>
-                {sessionLabel(session)}
-              </Link>
+              <Link to={scenarioPath(session.id)}>{sessionLabel(session)}</Link>
               <span className="muted"> · {t(kindLabelKey[session.kind])}</span>
             </span>
             <span className={`badge badge-${session.status}`}>
@@ -85,13 +99,22 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
               {session.status === 'draft' ? (
                 <button
                   type="button"
-                  className="link"
-                  onClick={() => start.mutate(session.id)}
+                  onClick={() => onStart(session)}
                   disabled={!canStart || start.isPending}
                   title={canStart ? undefined : t('sessions.needPartners')}
                 >
-                  {t('sessions.start')}
+                  {t('steps.startSession')}
                 </button>
+              ) : null}
+              {session.status === 'in_progress' ? (
+                <Link className="button-primary" to={scenarioPath(session.id)}>
+                  {t('steps.openSession')}
+                </Link>
+              ) : null}
+              {session.status === 'completed' ? (
+                <Link className="button-secondary" to={scenarioPath(session.id)}>
+                  {t('steps.viewSession')}
+                </Link>
               ) : null}
               {session.status === 'in_progress' ? (
                 <button
@@ -106,11 +129,7 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
               <button
                 type="button"
                 className="link danger-link"
-                onClick={() => {
-                  if (window.confirm(t('sessions.deleteConfirm'))) {
-                    remove.mutate(session.id);
-                  }
-                }}
+                onClick={() => setDeleteId(session.id)}
               >
                 {t('sessions.delete')}
               </button>
@@ -120,7 +139,7 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
       </ul>
       {start.isError ? <p className="error">{t('common.error')}</p> : null}
 
-      <form className="card" onSubmit={onCreate}>
+      <form className="card form-panel" onSubmit={onCreate}>
         <h3>{t('sessions.new')}</h3>
         <label>
           {t('sessions.kindLabel')}
@@ -155,6 +174,22 @@ export function SessionsSection({ partnershipId }: { partnershipId: string }) {
         {reviewWithoutBaseline ? <p className="muted">{t('sessions.baselineHint')}</p> : null}
         {create.isError ? <p className="error">{t('common.error')}</p> : null}
       </form>
+
+      {deleteId ? (
+        <ConfirmDialog
+          title={t('sessions.delete')}
+          message={t('sessions.deleteConfirm')}
+          confirmLabel={t('sessions.delete')}
+          danger
+          busy={remove.isPending}
+          onCancel={() => setDeleteId(null)}
+          onConfirm={() =>
+            remove.mutate(deleteId, {
+              onSuccess: () => setDeleteId(null),
+            })
+          }
+        />
+      ) : null}
     </section>
   );
 }
