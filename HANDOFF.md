@@ -23,6 +23,13 @@ PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host
 
 ## Active task
 
+### Production feedback — Gritz demo case ownership + replayable guides (IN PROGRESS)
+- Owner: Watson — started 2026-07-24.
+- Production finding: the reference partnership «Кофейня „Третье место“ (демо)» still exists intact, but it is owned by `demo@partners-architector.local`; the separately created Gritz account has no partnerships, so account isolation correctly returns an empty list there.
+- Data repair: reassign only that exact existing partnership to the Gritz account; do not recreate or modify its partners, session, clauses, versions, sign-offs, or exports. Verify row counts and access isolation after the change.
+- UX fix: add a visible user-menu action «Показать подсказку этого экрана» on screens that have guided content. It must replay the current screen's guide immediately even if it was already dismissed in this browser session; if guided mode is off, the action should turn it back on. No API/schema/dependency change.
+- Verification/deploy: run web formatting, lint, typecheck, tests, and production build; deploy only `psa-web`; production browser-check the Gritz login, intact demo case, first-step guide replay, and normal once-per-session behaviour. Keep API, DB container/volume/schema/seed/env untouched.
+
 ### Demo readiness — прототип для показа Грицу (D1–D8 live)
 - Owner: code-writing agent (Claude) — Plan committed: 2026-07-02. Full detail: `docs/plans/demo-readiness.md`.
 - Goal: show Gritz + architects a product that already removes routine and assembles the partnership agreement — directional feedback without looking like a prototype.
