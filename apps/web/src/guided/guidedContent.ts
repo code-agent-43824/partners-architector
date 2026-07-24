@@ -133,6 +133,7 @@ export function guidedScreenFor(pathname: string): GuidedScreen | null {
 }
 
 const STORAGE_KEY = 'psa_guided_seen';
+export const GUIDED_REPLAY_EVENT = 'psa-guided-replay';
 
 /** Screens already shown in this browser session (survives SPA navigation only). */
 export function wasSeen(kind: GuidedKind): boolean {
@@ -154,4 +155,19 @@ export function markSeen(kind: GuidedKind): void {
   } catch {
     /* storage unavailable — interstitials simply repeat */
   }
+}
+
+/** Forget one screen and notify the mounted overlay so it opens immediately. */
+export function replayGuidedScreen(kind: GuidedKind): void {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const seen = raw ? (JSON.parse(raw) as string[]) : [];
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(seen.filter((seenKind) => seenKind !== kind)),
+    );
+  } catch {
+    /* storage unavailable — the overlay is already eligible to repeat */
+  }
+  window.dispatchEvent(new Event(GUIDED_REPLAY_EVENT));
 }

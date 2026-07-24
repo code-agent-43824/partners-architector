@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import { useMe, useUpdatePreferences } from '../auth/useAuth';
+import { guidedScreenFor, replayGuidedScreen } from '../guided/guidedContent';
 import { t } from '../i18n';
 
 /**
  * Minimal per-user settings (D7): a dropdown next to the logout button.
- * Contents today: the guided-mode toggle and the profile link.
+ * Contents today: guided-mode controls and the profile link.
  */
 export function UserMenu() {
+  const location = useLocation();
   const { data: user } = useMe();
   const preferences = useUpdatePreferences();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const guidedScreen = guidedScreenFor(location.pathname);
 
   useEffect(() => {
     if (!open) {
@@ -38,6 +41,17 @@ export function UserMenu() {
 
   if (!user) {
     return null;
+  }
+
+  function replayGuide() {
+    if (!guidedScreen || !user) {
+      return;
+    }
+    if (!user.guidedMode) {
+      preferences.mutate({ guidedMode: true });
+    }
+    replayGuidedScreen(guidedScreen.kind);
+    setOpen(false);
   }
 
   return (
@@ -67,6 +81,16 @@ export function UserMenu() {
               <span className="user-menu-hint">{t('userMenu.guidedHint')}</span>
             </span>
           </label>
+          {guidedScreen ? (
+            <button
+              type="button"
+              className="link user-menu-item user-menu-action"
+              role="menuitem"
+              onClick={replayGuide}
+            >
+              {t('userMenu.replayGuide')}
+            </button>
+          ) : null}
           <div className="user-menu-sep" />
           <Link
             className="link user-menu-item"

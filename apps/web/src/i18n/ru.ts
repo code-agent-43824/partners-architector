@@ -23,6 +23,7 @@ export const ru = {
   'nav.logout': 'Выйти',
   'userMenu.guided': 'Режим подсказок',
   'userMenu.guidedHint': 'Пояснения к экранам и планам развития',
+  'userMenu.replayGuide': 'Показать подсказку этого экрана',
   'guided.kicker': 'Режим подсказок',
   'guided.howTitle': 'Как пользоваться',
   'guided.futureTitle': 'Появится в будущем',

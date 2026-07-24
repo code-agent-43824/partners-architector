@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 
 import { useMe, useUpdatePreferences } from '../auth/useAuth';
-import { guidedScreenFor, markSeen, wasSeen } from '../guided/guidedContent';
+import { GUIDED_REPLAY_EVENT, guidedScreenFor, markSeen, wasSeen } from '../guided/guidedContent';
 import { t } from '../i18n';
 
 /**
@@ -21,6 +21,14 @@ export function GuidedOverlay() {
 
   const screen = guidedScreenFor(location.pathname);
   const visible = Boolean(user?.guidedMode && screen && !wasSeen(screen.kind));
+
+  useEffect(() => {
+    function onReplay() {
+      setTick((n) => n + 1);
+    }
+    window.addEventListener(GUIDED_REPLAY_EVENT, onReplay);
+    return () => window.removeEventListener(GUIDED_REPLAY_EVENT, onReplay);
+  }, []);
 
   useEffect(() => {
     if (!visible || !screen) {

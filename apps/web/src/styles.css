@@ -1334,6 +1334,11 @@ a.link {
   font-size: 0.875rem;
 }
 
+.user-menu-action {
+  width: 100%;
+  text-align: left;
+}
+
 .user-menu-item input {
   margin-top: 0.15rem;
 }
