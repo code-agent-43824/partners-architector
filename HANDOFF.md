@@ -4,7 +4,7 @@ Shared, living handoff document for the coding agents working on Partners Archit
 
 Any agent's session can stop at any time. This file is the single source of truth for what is in progress, so another agent can resume without losing context. The rules live in the "Collaboration and handoff" section of `AGENTS.md`. In short: write down what you are about to do here and commit it **before** you start, keep it updated as you go, and record the result here when you finish.
 
-**Last updated:** 2026-07-24 — by: Watson
+**Last updated:** 2026-08-18 — by: Claude (code agent)
 
 ## Current status
 
@@ -22,6 +22,12 @@ PHASE 1 (complete and live) — Steps **1.1–1.5d are live** on the Oracle host
 - **Demo-first re-plan (2026-07-02):** development is re-sequenced around a demo to Dmitry Gritz and the architects (goal: directional feedback while already delivering real value; the product must not read as a prototype). Owner's accepted hypothesis: near-term value is **routine removal + assembling the agreement**, not the calculator (shares can be computed on paper). Therefore: parts of spec Phase 4 (agreement assembly + PDF/DOCX export) are pulled forward; **Phase 2 (Gritz Calculator) and Phase 3 (matrix) move to after the demo feedback**; the shares block gets the spec's manual input mode (FR-5.1) as interim; the calculator's place is *shown* in the demo as the next milestone. Plan: `docs/plans/demo-readiness.md`. Additionally, the owner handed **Watson** the ops/security/e2e backlog (W1–W6 below) — deploy-adjacent and security work found in the 2026-07-02 CTO/PM review.
 
 ## Active task
+
+### D9 — Импорт результатов теста совместимости ПЕСП (IN PROGRESS)
+- Owner: code-writing agent (Claude) — Plan committed: 2026-08-18. Full detail: `docs/plans/pesp-compatibility-import.md`.
+- Context: Гриц+Кибкало выпустили «Тест естественной совместимости партнёров» (ПЕСП, Telegram Mini App, анонс t.me/DeanIBL/1212 от 2026-08-13): 184 вопроса → 32 конструкта в 3 блоках → парная матрица зон + балл ПЕСП (A–D). Owner decision 2026-08-18: формат их экспорта пока неизвестен (позже, вероятно, JSON), но кнопки импорта результатов должны появиться в интерфейсе уже сейчас, импорт должен принимать любой файл, и интерфейс должен явно подсвечивать, что вопросы сессии адаптированы по результатам тестирования. История «личный кабинет партнёра + свои вопросы» (Phase 6) остаётся отдельным треком — тест её не заменяет.
+- Scope: (a) API-модуль `test-import` + **миграция №3** `test_import` (файл сохраняется как bytea для распознавания задним числом; статусы `received`/`parsed`; наш временный строгий JSON-формат `psa-pesp-v0` парсится сразу); multipart POST до 10 МБ (multer из состава @nestjs/platform-express — новых зависимостей нет), PATCH ручной разметки зон, DELETE; всё под SEC-5. (b) Web: степпер карточки D8 расширяется до **4 шагов** — новый необязательный шаг «Совместимость» (импорт, список загрузок, сводка отчёта, ручной редактор зон по черновому справочнику 32 конструктов). (c) Сценарий: баннер «адаптирован по результатам теста», маркеры зон в TOC и плашки в блоках (маппинг конструкт→вопросы — web-константа, черновой). (d) Guided: новый kind `compatibility`, тексты шагов «из 3»→«из 4». (e) Демо-сид кофейни получает распознанный демо-отчёт (красные зоны ложатся на №9/№29/№20/№21), образец файла в `docs/demo/`, такт в демо-скрипте; **кейс Грица на проде не трогаем**. (f) API-e2e дополняется секцией test-imports.
+- IP guard: банк вопросов/скоринг/пороги/вердикты ПЕСП — собственность Грица/Кибкало, в репозиторий не попадают (протокол O1); D9 только принимает и отображает результаты. Названия конструктов v0 — с открытых маркетинговых скриншотов, помечены как черновые.
 
 ### Production feedback — Gritz demo case ownership + replayable guides (COMPLETE)
 - Owner: Watson — completed 2026-07-24.
