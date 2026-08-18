@@ -1,6 +1,6 @@
 # D9 — Импорт результатов теста совместимости (ПЕСП)
 
-**Status:** IN PROGRESS (plan committed before code, per AGENTS.md).
+**Status:** DONE 2026-08-18 (implemented + verified; awaiting Watson deploy — see the D9 deploy note in HANDOFF.md).
 **Owner request (2026-08-18):** Гриц и Кибкало выпустили «Тест естественной
 совместимости партнёров» (ПЕСП) — Telegram Mini App (анонс:
 t.me/DeanIBL/1212, 2026-08-13): 184 вопроса, 32 конструкта в трёх блоках
