@@ -24,6 +24,7 @@ describe('guided content', () => {
   it('maps all guided partnership routes to their own screen', () => {
     expect(guidedScreenFor('/partnerships/case-1')?.kind).toBe('partnership');
     expect(guidedScreenFor('/partnerships/case-1/partners')?.kind).toBe('partners');
+    expect(guidedScreenFor('/partnerships/case-1/compatibility')?.kind).toBe('compatibility');
     expect(guidedScreenFor('/partnerships/case-1/sessions')?.kind).toBe('sessions');
   });
 

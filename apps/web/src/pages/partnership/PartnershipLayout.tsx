@@ -2,15 +2,17 @@ import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
 
 import { MIN_PARTNERS } from '../../api/partners';
 import { t } from '../../i18n';
+import { useTestImports } from '../../partnerships/compatHooks';
 import { usePartnership } from '../../partnerships/hooks';
 import { PARTNERSHIP_TAG_LABELS } from '../../partnerships/labels';
 import { usePartners } from '../../partnerships/partnerHooks';
 import { useSessions } from '../../partnerships/sessionHooks';
 
 /**
- * Partnership card (D8): a shared header — name, numbered stepper
- * «Партнёрство · Участники · Сессии» and a hero CTA into the running
- * session — over three step sub-routes rendered in the Outlet.
+ * Partnership card (D8, +compatibility step in D9): a shared header — name,
+ * numbered stepper «Партнёрство · Участники · Совместимость · Сессии» and a
+ * hero CTA into the running session — over four step sub-routes rendered in
+ * the Outlet.
  */
 export function PartnershipLayout() {
   const { id = '' } = useParams();
@@ -18,6 +20,7 @@ export function PartnershipLayout() {
   const query = usePartnership(id);
   const partners = usePartners(id);
   const sessions = useSessions(id);
+  const testImports = useTestImports(id);
 
   if (query.isLoading) {
     return <p className="muted">{t('common.loading')}</p>;
@@ -29,6 +32,7 @@ export function PartnershipLayout() {
   const partnership = query.data;
   const tagLabels = partnership.typeTags.map((tag) => PARTNERSHIP_TAG_LABELS[tag]).join(', ');
   const partnersDone = (partners.data?.length ?? 0) >= MIN_PARTNERS;
+  const compatDone = (testImports.data?.length ?? 0) > 0;
   const sessionsStarted = (sessions.data?.length ?? 0) > 0;
   const running = sessions.data?.find((session) => session.status === 'in_progress');
 
@@ -39,6 +43,12 @@ export function PartnershipLayout() {
       end: false,
       label: t('steps.partners'),
       done: partnersDone,
+    },
+    {
+      to: `/partnerships/${id}/compatibility`,
+      end: false,
+      label: t('steps.compatibility'),
+      done: compatDone,
     },
     {
       to: `/partnerships/${id}/sessions`,

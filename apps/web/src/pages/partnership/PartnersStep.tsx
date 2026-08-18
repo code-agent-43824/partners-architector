@@ -16,14 +16,14 @@ export function PartnersStep() {
       <PartnersSection partnershipId={id} />
       <div className="step-cta">
         {enough ? (
-          <Link className="button-primary" to={`/partnerships/${id}/sessions`}>
-            {t('steps.nextSessions')}
+          <Link className="button-primary" to={`/partnerships/${id}/compatibility`}>
+            {t('steps.nextCompatibility')}
           </Link>
         ) : (
           <>
             <span className="muted">{t('sessions.needPartners')}</span>
             <span className="button-primary is-disabled" aria-disabled="true">
-              {t('steps.nextSessions')}
+              {t('steps.nextCompatibility')}
             </span>
           </>
         )}

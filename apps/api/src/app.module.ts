@@ -10,6 +10,7 @@ import { PartnersModule } from './partners/partners.module';
 import { PartnershipsModule } from './partnerships/partnerships.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ScenarioModule } from './scenario/scenario.module';
+import { TestImportModule } from './test-import/test-import.module';
 import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { SessionsModule } from './sessions/sessions.module';
     PartnersModule,
     SessionsModule,
     ScenarioModule,
+    TestImportModule,
     AgreementModule,
     HealthModule,
   ],

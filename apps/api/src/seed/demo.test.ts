@@ -1,7 +1,14 @@
 import { ClauseStatus } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
-import { DEMO_CLAUSES, DEMO_PARTNERS, DEMO_VERSIONS, DEMO_VERSIONS_BLOCK } from './demo';
+import { parsePespFile } from '../test-import/dto';
+import {
+  DEMO_CLAUSES,
+  DEMO_PARTNERS,
+  DEMO_PESP_REPORT,
+  DEMO_VERSIONS,
+  DEMO_VERSIONS_BLOCK,
+} from './demo';
 import { QUESTIONS } from './questions';
 
 const HEAVY = QUESTIONS.filter((q) => q.isSensitive).map((q) => q.number);
@@ -87,5 +94,20 @@ describe('demo seed data', () => {
     expect(DEMO_VERSIONS_BLOCK).toBe(2);
     expect(DEMO_VERSIONS).toHaveLength(2);
     expect(DEMO_VERSIONS[0]!.minutesAgo).toBeGreaterThan(DEMO_VERSIONS[1]!.minutesAgo);
+  });
+
+  it('ПЕСП demo report parses as psa-pesp-v0 and flags the hard blocks (D9)', () => {
+    const parsed = parsePespFile(Buffer.from(JSON.stringify(DEMO_PESP_REPORT), 'utf8'));
+    expect(parsed).not.toBeNull();
+    expect(parsed?.score).toBe(71);
+    expect(parsed?.partners).toHaveLength(DEMO_PARTNERS.length);
+    for (const construct of parsed?.constructs ?? []) {
+      expect(construct.values, construct.code).toHaveLength(DEMO_PARTNERS.length);
+    }
+    const zones = new Map(parsed?.constructs.map((c) => [c.code, c.zone]));
+    expect(zones.get('risk_attitude')).toBe('red');
+    expect(zones.get('disagreement_style')).toBe('red');
+    expect(zones.get('capital_economic')).toBe('yellow');
+    expect(zones.get('stress_inner')).toBe('yellow');
   });
 });

@@ -4,6 +4,12 @@ import { Link, useParams } from 'react-router-dom';
 import { apiErrorMessage } from '../api/errors';
 import type { Partner } from '../api/partners';
 import type { Clause, ClauseStatus, StructuredData, UpdateClauseInput } from '../api/scenario';
+import {
+  activeImport,
+  attentionByQuestion,
+  type AttentionZone,
+  worstZone,
+} from '../compat/constructs';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MeaningEditor } from '../components/MeaningEditor';
 import { Modal } from '../components/Modal';
@@ -19,6 +25,7 @@ import {
   useSetSignoff,
   useUpdateClause,
 } from '../partnerships/clauseHooks';
+import { useTestImports } from '../partnerships/compatHooks';
 import { usePartners } from '../partnerships/partnerHooks';
 
 const STATUSES: ClauseStatus[] = [
@@ -83,8 +90,16 @@ export function ScenarioPage() {
   const { partnershipId = '', sessionId = '' } = useParams();
   const query = useClauses(partnershipId, sessionId);
   const partnersQuery = usePartners(partnershipId);
+  const testImports = useTestImports(partnershipId);
   const clauses = query.data;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // D9: yellow/red zones of the latest compatibility-test import, mapped to
+  // question numbers — they adapt the TOC and the focused block.
+  const attention = useMemo(
+    () => attentionByQuestion(activeImport(testImports.data)?.payload),
+    [testImports.data],
+  );
 
   // Resolve the focused block (default: the first) from the loaded list.
   const selectedIndex = useMemo(() => {
@@ -179,6 +194,12 @@ export function ScenarioPage() {
         {t('scenario.agreedOf')}: {agreed} / {total} · {t('scenario.heavyOpen')}: {heavyOpen} ·{' '}
         {t('scenario.disputedParked')}: {disputedParked}
       </p>
+      {attention.size > 0 ? (
+        <p className="compat-banner">
+          <span className="zone-chip zone-yellow" aria-hidden="true" />
+          {t('compat.adaptedBanner')} — {t('compat.adaptedCount')}: {attention.size}
+        </p>
+      ) : null}
       <p>
         <Link
           className="link"
@@ -213,6 +234,15 @@ export function ScenarioPage() {
                         ⬤
                       </span>
                     ) : null}
+                    {(() => {
+                      const zone = worstZone(attention.get(clause.question.number));
+                      return zone ? (
+                        <span
+                          className={`toc-zone zone-chip zone-${zone}`}
+                          title={t('compat.tocZoneTitle')}
+                        />
+                      ) : null;
+                    })()}
                   </button>
                 ))}
               </div>
@@ -250,6 +280,7 @@ export function ScenarioPage() {
               sessionId={sessionId}
               clause={selected}
               partners={partners}
+              attention={attention.get(selected.question.number)}
             />
           </div>
         </div>
@@ -265,11 +296,13 @@ interface ClauseCardProps {
   sessionId: string;
   clause: Clause;
   partners: Partner[];
+  /** Compatibility-test zones mapped to this block (D9), red first. */
+  attention?: AttentionZone[];
 }
 
 type Dialog = { kind: 'na' } | { kind: 'restore'; versionId: string } | null;
 
-function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardProps) {
+function ClauseCard({ partnershipId, sessionId, clause, partners, attention }: ClauseCardProps) {
   const update = useUpdateClause(partnershipId, sessionId);
   const flush = useFlushClause(partnershipId, sessionId);
   const signoff = useSetSignoff(partnershipId, sessionId);
@@ -396,6 +429,24 @@ function ClauseCard({ partnershipId, sessionId, clause, partners }: ClauseCardPr
         ) : null}
         <span className={`badge badge-${clause.status}`}>{t(statusLabelKey[clause.status])}</span>
       </div>
+
+      {attention && attention.length > 0 ? (
+        <div className="compat-callout">
+          <p className="compat-callout-title">{t('compat.calloutTitle')}</p>
+          <ul>
+            {attention.map((zone) => (
+              <li key={zone.code}>
+                <span className={`zone-chip zone-${zone.zone}`} aria-hidden="true" />
+                <span>{zone.name}</span>
+                {zone.values ? (
+                  <span className="muted"> — {zone.values.map(Math.round).join(' | ')}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <p className="muted compat-callout-hint">{t('compat.calloutHint')}</p>
+        </div>
+      ) : null}
 
       {clause.question.prompt ? <p className="clause-prompt">{clause.question.prompt}</p> : null}
       {clause.question.helperQuestions.length > 0 ? (

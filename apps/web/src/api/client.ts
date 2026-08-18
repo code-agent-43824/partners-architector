@@ -34,8 +34,9 @@ interface RequestOptions {
  */
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? 'GET';
+  const isForm = options.body instanceof FormData;
   const headers: Record<string, string> = {};
-  if (options.body !== undefined) {
+  if (options.body !== undefined && !isForm) {
     headers['content-type'] = 'application/json';
   }
   if (!SAFE_METHODS.has(method)) {
@@ -49,7 +50,12 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     method,
     credentials: 'include',
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body:
+      options.body === undefined
+        ? undefined
+        : isForm
+          ? (options.body as FormData)
+          : JSON.stringify(options.body),
   });
 
   if (response.status === 204) {

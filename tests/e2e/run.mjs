@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* global URL, console, fetch, process */
+/* global URL, console, fetch, process, FormData, Blob */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -249,7 +249,8 @@ function apiClient(baseUrl, jar = new CookieJar()) {
       if (cookie) {
         headers.cookie = cookie;
       }
-      if (body !== undefined) {
+      const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+      if (body !== undefined && !isForm) {
         headers['content-type'] = 'application/json';
       }
       if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
@@ -261,7 +262,7 @@ function apiClient(baseUrl, jar = new CookieJar()) {
       const response = await fetch(`${baseUrl}${path}`, {
         method,
         headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
       });
       jar.addFrom(response);
       const contentType = response.headers.get('content-type') ?? '';
@@ -282,6 +283,11 @@ function apiClient(baseUrl, jar = new CookieJar()) {
     },
     post(path, body, expected = 200) {
       return this.request('POST', path, body, expected);
+    },
+    postFile(path, file, expected = 201) {
+      const form = new FormData();
+      form.append('file', new Blob([file.content], { type: file.type }), file.name);
+      return this.request('POST', path, form, expected);
     },
     patch(path, body, expected = 200) {
       return this.request('PATCH', path, body, expected);
@@ -566,6 +572,49 @@ async function runApiAssertions(baseUrl) {
   );
   assert.equal(demoClauses.payload.length, 30);
   assert.equal(demoClauses.payload.filter((clause) => clause.status === 'agreed').length, 24);
+
+  // D9: compatibility-test result imports (ПЕСП).
+  const junkUpload = await userA.postFile(
+    `/partnerships/${partnershipId}/test-imports`,
+    { name: 'отчёт.pdf', type: 'application/pdf', content: '%PDF-1.4 not really a report' },
+    201,
+  );
+  assert.equal(junkUpload.payload.status, 'received');
+  assert.equal(junkUpload.payload.payload, null);
+  const pespUpload = await userA.postFile(
+    `/partnerships/${partnershipId}/test-imports`,
+    {
+      name: 'pesp.json',
+      type: 'application/json',
+      content: JSON.stringify({
+        format: 'psa-pesp-v0',
+        partners: ['А', 'Б'],
+        score: 72,
+        level: 'B',
+        constructs: [
+          { code: 'risk_attitude', name: 'Отношение к рискам', zone: 'red', values: [30, 85] },
+        ],
+      }),
+    },
+    201,
+  );
+  assert.equal(pespUpload.payload.status, 'parsed');
+  assert.equal(pespUpload.payload.payload.score, 72);
+  assert.equal(pespUpload.payload.payload.source, 'file');
+  const importsList = await userA.get(`/partnerships/${partnershipId}/test-imports`);
+  assert.equal(importsList.payload.length, 2);
+  assert.ok(!('data' in importsList.payload[0]), 'raw file bytes must not be returned');
+  await userB.get(`/partnerships/${partnershipId}/test-imports`, 403);
+  const zoned = await userA.patch(
+    `/partnerships/${partnershipId}/test-imports/${junkUpload.payload.id}/zones`,
+    { constructs: [{ code: 'stress_inner', name: 'Стресс внутри', zone: 'yellow' }] },
+  );
+  assert.equal(zoned.payload.payload.source, 'manual');
+  assert.equal(zoned.payload.payload.constructs.length, 1);
+  await userA.post(`/partnerships/${partnershipId}/test-imports`, undefined, 400);
+  await userA.delete(`/partnerships/${partnershipId}/test-imports/${junkUpload.payload.id}`);
+  const importsAfterDelete = await userA.get(`/partnerships/${partnershipId}/test-imports`);
+  assert.equal(importsAfterDelete.payload.length, 1);
 
   await userA.delete(`/partnerships/${partnershipId}`);
   await userA.delete(`/partnerships/${tooSmallPartnership.payload.id}`);

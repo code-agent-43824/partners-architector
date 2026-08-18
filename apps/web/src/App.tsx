@@ -5,6 +5,7 @@ import { AppLayout } from './components/AppLayout';
 import { AgreementPage } from './pages/AgreementPage';
 import { LoginPage } from './pages/LoginPage';
 import { AboutStep } from './pages/partnership/AboutStep';
+import { CompatibilityStep } from './pages/partnership/CompatibilityStep';
 import { PartnershipLayout } from './pages/partnership/PartnershipLayout';
 import { PartnersStep } from './pages/partnership/PartnersStep';
 import { SessionsStep } from './pages/partnership/SessionsStep';
@@ -28,6 +29,7 @@ export function App() {
         <Route path="/partnerships/:id" element={<PartnershipLayout />}>
           <Route index element={<AboutStep />} />
           <Route path="partners" element={<PartnersStep />} />
+          <Route path="compatibility" element={<CompatibilityStep />} />
           <Route path="sessions" element={<SessionsStep />} />
         </Route>
         <Route path="/partnerships/:partnershipId/sessions/:sessionId" element={<ScenarioPage />} />

@@ -253,6 +253,106 @@ export const DEMO_VERSIONS: { text: string; note: string | null; minutesAgo: num
   },
 ];
 
+/**
+ * Demo ПЕСП report (D9) in the provisional psa-pesp-v0 import format. The
+ * red zones deliberately land on the case's hard blocks (№9/№29 отложены,
+ * №20/№21 частично подтверждены) so the adapted scenario tells one coherent
+ * story. Values are invented demo data — no real methodology scoring.
+ */
+export const DEMO_PESP_FILE_NAME = 'ПЕСП-отчёт-кофейня-демо.json';
+export const DEMO_PESP_REPORT = {
+  format: 'psa-pesp-v0',
+  partners: DEMO_PARTNERS.map((partner) => partner.fullName.split(' ')[0]!),
+  score: 71,
+  level: 'B',
+  constructs: [
+    {
+      code: 'risk_attitude',
+      name: 'Отношение к рискам',
+      block: 'Паритет',
+      zone: 'red',
+      values: [30, 85, 62],
+    },
+    {
+      code: 'disagreement_style',
+      name: 'Стиль несогласия',
+      block: 'Совпадение',
+      zone: 'red',
+      values: [25, 90, 70],
+    },
+    {
+      code: 'capital_economic',
+      name: 'Экономический капитал',
+      block: 'Различие',
+      zone: 'yellow',
+      values: [50, 80, 65],
+    },
+    {
+      code: 'stress_inner',
+      name: 'Стресс внутри',
+      block: 'Паритет',
+      zone: 'yellow',
+      values: [55, 78, 90],
+    },
+    {
+      code: 'plan_flexibility',
+      name: 'План — гибкость',
+      block: 'Паритет',
+      zone: 'green',
+      values: [80, 72, 68],
+    },
+    {
+      code: 'trust_source',
+      name: 'Источник доверия',
+      block: 'Паритет',
+      zone: 'green',
+      values: [70, 66, 74],
+    },
+    {
+      code: 'profit_meaning',
+      name: 'Прибыль — значимость бизнеса',
+      block: 'Совпадение',
+      zone: 'green',
+      values: [85, 80, 78],
+    },
+    {
+      code: 'life_work',
+      name: 'Дело жизни',
+      block: 'Совпадение',
+      zone: 'green',
+      values: [90, 84, 88],
+    },
+    {
+      code: 'thinker_doer',
+      name: 'Мыслитель — деятель',
+      block: 'Совпадение',
+      zone: 'green',
+      values: [40, 95, 60],
+    },
+    {
+      code: 'intro_extraversion',
+      name: 'Интроверсия — экстраверсия',
+      block: 'Совпадение',
+      zone: 'green',
+      values: [35, 80, 55],
+    },
+    {
+      code: 'paei_roles',
+      name: 'Роли PAEI',
+      block: 'Различие',
+      zone: 'green',
+      values: [75, 60, 82],
+    },
+    {
+      code: 'feedback_partner',
+      name: 'Обратная связь партнёру',
+      block: 'Совпадение',
+      zone: 'green',
+      values: [88, 80, 76],
+    },
+  ],
+} as const;
+
 export interface DemoSeedResult {
   email: string;
   partnershipId: string;
@@ -261,6 +361,7 @@ export interface DemoSeedResult {
   agreed: number;
   signoffs: number;
   versions: number;
+  testImports: number;
 }
 
 export async function seedDemo(
@@ -396,6 +497,30 @@ export async function seedDemo(
     }
   }
 
+  // D9: the compatibility-test import that adapts the demo scenario.
+  const reportBytes = Buffer.from(JSON.stringify(DEMO_PESP_REPORT, null, 2), 'utf8');
+  await prisma.testImport.create({
+    data: {
+      partnershipId: partnership.id,
+      fileName: DEMO_PESP_FILE_NAME,
+      mimeType: 'application/json',
+      sizeBytes: reportBytes.length,
+      data: reportBytes,
+      status: 'parsed',
+      payload: {
+        source: 'file',
+        partners: [...DEMO_PESP_REPORT.partners],
+        score: DEMO_PESP_REPORT.score,
+        level: DEMO_PESP_REPORT.level,
+        constructs: DEMO_PESP_REPORT.constructs.map((construct) => ({
+          ...construct,
+          values: [...construct.values],
+        })),
+      },
+      uploadedAt: new Date(now - 90 * 60 * 1000),
+    },
+  });
+
   return {
     email,
     partnershipId: partnership.id,
@@ -404,5 +529,6 @@ export async function seedDemo(
     agreed: DEMO_CLAUSES.filter((c) => c.status === ClauseStatus.agreed).length,
     signoffs,
     versions,
+    testImports: 1,
   };
 }
